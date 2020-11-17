@@ -105,7 +105,7 @@ func TestInitExporterInvalidEndpoint(t *testing.T) {
 	assert.EqualError(t, err, "endpoint is not set")
 }
 
-func TestAllSuccess(t *testing.T) {
+func TestAllLogsSuccess(t *testing.T) {
 	test := prepareSenderTest(t, []func(w http.ResponseWriter, req *http.Request){
 		func(w http.ResponseWriter, req *http.Request) {
 			body := extractBody(t, req)
@@ -121,7 +121,7 @@ func TestAllSuccess(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestAllFailed(t *testing.T) {
+func TestAllLogsFailed(t *testing.T) {
 	test := prepareSenderTest(t, []func(w http.ResponseWriter, req *http.Request){
 		func(w http.ResponseWriter, req *http.Request) {
 			w.WriteHeader(500)
@@ -144,7 +144,7 @@ func TestAllFailed(t *testing.T) {
 	assert.Equal(t, logs, partial.GetLogs())
 }
 
-func TestPartiallyFailed(t *testing.T) {
+func TestLogsPartiallyFailed(t *testing.T) {
 	test := prepareSenderTest(t, []func(w http.ResponseWriter, req *http.Request){
 		func(w http.ResponseWriter, req *http.Request) {
 			w.WriteHeader(500)
@@ -176,4 +176,94 @@ func TestPartiallyFailed(t *testing.T) {
 	partial, ok := err.(consumererror.PartialError)
 	require.True(t, ok)
 	assert.Equal(t, expected, partial.GetLogs())
+}
+
+func metricPairToMetrics(mp []metricPair) pdata.Metrics {
+	metrics := pdata.NewMetrics()
+	metrics.ResourceMetrics().Resize(len(mp))
+	for num, record := range mp {
+		metrics.ResourceMetrics().At(num).Resource().InitEmpty()
+		record.attributes.CopyTo(metrics.ResourceMetrics().At(num).Resource().Attributes())
+		metrics.ResourceMetrics().At(num).InstrumentationLibraryMetrics().Resize(1)
+		metrics.ResourceMetrics().At(num).InstrumentationLibraryMetrics().At(0).Metrics().Append(record.metric)
+	}
+
+	return metrics
+}
+
+func TestAllMetricsSuccess(t *testing.T) {
+	test := prepareSenderTest(t, []func(w http.ResponseWriter, req *http.Request){
+		func(w http.ResponseWriter, req *http.Request) {
+			body := extractBody(t, req)
+			expected := `test=test_value test2=second_value metric=test.metric.data unit=bytes  14500 1605534165
+another_test=test_value metric=test.metric.data2 unit=s  123 1605534144
+another_test=test_value metric=test.metric.data2 unit=s  124 1605534145`
+			assert.Equal(t, expected, body)
+			assert.Equal(t, "application/vnd.sumologic.carbon2", req.Header.Get("Content-Type"))
+		},
+	})
+	defer func() { test.srv.Close() }()
+	metrics := metricPairToMetrics(exampleTwoIntMetrics())
+
+	_, err := test.exp.pushMetricsData(context.Background(), metrics)
+	assert.NoError(t, err)
+}
+
+func TestAllMetricsFailed(t *testing.T) {
+	test := prepareSenderTest(t, []func(w http.ResponseWriter, req *http.Request){
+		func(w http.ResponseWriter, req *http.Request) {
+			w.WriteHeader(500)
+
+			body := extractBody(t, req)
+			expected := `test=test_value test2=second_value metric=test.metric.data unit=bytes  14500 1605534165
+another_test=test_value metric=test.metric.data2 unit=s  123 1605534144
+another_test=test_value metric=test.metric.data2 unit=s  124 1605534145`
+			assert.Equal(t, expected, body)
+			assert.Equal(t, "application/vnd.sumologic.carbon2", req.Header.Get("Content-Type"))
+		},
+	})
+	defer func() { test.srv.Close() }()
+	metrics := metricPairToMetrics(exampleTwoIntMetrics())
+
+	dropped, err := test.exp.pushMetricsData(context.Background(), metrics)
+	assert.EqualError(t, err, "error during sending data: 500 Internal Server Error")
+	assert.Equal(t, 2, dropped)
+
+	partial, ok := err.(consumererror.PartialError)
+	require.True(t, ok)
+	assert.Equal(t, metrics, partial.GetMetrics())
+}
+
+func TestMetricsPartiallyFailed(t *testing.T) {
+	test := prepareSenderTest(t, []func(w http.ResponseWriter, req *http.Request){
+		func(w http.ResponseWriter, req *http.Request) {
+			w.WriteHeader(500)
+
+			body := extractBody(t, req)
+			expected := "test=test_value test2=second_value metric=test.metric.data unit=bytes  14500 1605534165"
+			assert.Equal(t, expected, body)
+			assert.Equal(t, "application/vnd.sumologic.carbon2", req.Header.Get("Content-Type"))
+		},
+		func(w http.ResponseWriter, req *http.Request) {
+			body := extractBody(t, req)
+			expected := `another_test=test_value metric=test.metric.data2 unit=s  123 1605534144
+another_test=test_value metric=test.metric.data2 unit=s  124 1605534145`
+			assert.Equal(t, expected, body)
+			assert.Equal(t, "application/vnd.sumologic.carbon2", req.Header.Get("Content-Type"))
+		},
+	})
+	defer func() { test.srv.Close() }()
+	test.exp.config.MaxRequestBodySize = 1
+
+	records := exampleTwoIntMetrics()
+	metrics := metricPairToMetrics(records)
+	expected := metricPairToMetrics(records[:1])
+
+	dropped, err := test.exp.pushMetricsData(context.Background(), metrics)
+	assert.EqualError(t, err, "error during sending data: 500 Internal Server Error")
+	assert.Equal(t, 1, dropped)
+
+	partial, ok := err.(consumererror.PartialError)
+	require.True(t, ok)
+	assert.Equal(t, expected, partial.GetMetrics())
 }

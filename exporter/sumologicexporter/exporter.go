@@ -178,3 +178,96 @@ func (se *sumologicexporter) pushLogsData(_ context.Context, ld pdata.Logs) (int
 
 	return 0, nil
 }
+
+func newMetricsExporter(
+	cfg *Config,
+	params component.ExporterCreateParams,
+) (component.MetricsExporter, error) {
+	se, err := initExporter(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return exporterhelper.NewMetricsExporter(
+		cfg,
+		params.Logger,
+		se.pushMetricsData,
+		// Disable exporterhelper Timeout, since we are using a custom mechanism
+		// within exporter itself
+		exporterhelper.WithTimeout(exporterhelper.TimeoutSettings{Timeout: 0}),
+		exporterhelper.WithRetry(cfg.RetrySettings),
+		exporterhelper.WithQueue(cfg.QueueSettings),
+	)
+}
+
+// pushLogsData groups data with common metadata and send them as separate batched requests
+// it returns number of unsent metrics and error which contains list of dropped records
+// so they can be handle by the OTC retry mechanism
+func (se *sumologicexporter) pushMetricsData(_ context.Context, ld pdata.Metrics) (int, error) {
+	var (
+		errors         []error
+		sdr            *sender = newSender(se.config, se.client, se.filter)
+		droppedRecords []metricPair
+		attributes     pdata.AttributeMap
+	)
+
+	// Iterate over ResourceMetrics
+	for i := 0; i < ld.ResourceMetrics().Len(); i++ {
+		resource := ld.ResourceMetrics().At(i)
+
+		if resource.IsNil() {
+			continue
+		}
+
+		attributes = resource.Resource().Attributes()
+
+		// iterate over InstrumentationLibraryMetrics
+		for j := 0; j < resource.InstrumentationLibraryMetrics().Len(); j++ {
+			library := resource.InstrumentationLibraryMetrics().At(j)
+			if library.IsNil() {
+				continue
+			}
+
+			// iterate over Metrics
+			for k := 0; k < library.Metrics().Len(); k++ {
+				metric := library.Metrics().At(k)
+				if metric.IsNil() {
+					continue
+				}
+				mp := metricPair{
+					metric:     metric,
+					attributes: attributes,
+				}
+				// add metric to the buffer
+				dropped, err := sdr.batchMetric(mp)
+				if err != nil {
+					droppedRecords = append(droppedRecords, dropped...)
+					errors = append(errors, err)
+				}
+			}
+		}
+	}
+
+	// Flush pending metrics
+	dropped, err := sdr.sendMetrics()
+	if err != nil {
+		droppedRecords = append(droppedRecords, dropped...)
+		errors = append(errors, err)
+	}
+
+	if len(droppedRecords) > 0 {
+		// Move all dropped records to Metrics
+		droppedMetrics := pdata.NewMetrics()
+		droppedMetrics.ResourceMetrics().Resize(len(droppedRecords))
+		for num, record := range droppedRecords {
+			droppedMetrics.ResourceMetrics().At(num).Resource().InitEmpty()
+			record.attributes.CopyTo(droppedMetrics.ResourceMetrics().At(num).Resource().Attributes())
+			droppedMetrics.ResourceMetrics().At(num).InstrumentationLibraryMetrics().Resize(1)
+			droppedMetrics.ResourceMetrics().At(num).InstrumentationLibraryMetrics().At(0).Metrics().Append(record.metric)
+		}
+
+		return len(droppedRecords), consumererror.PartialMetricsError(componenterror.CombineErrors(errors), droppedMetrics)
+	}
+
+	return 0, nil
+}
