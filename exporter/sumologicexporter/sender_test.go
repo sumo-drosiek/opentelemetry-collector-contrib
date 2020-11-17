@@ -376,3 +376,135 @@ func TestBuffer(t *testing.T) {
 	assert.Equal(t, 2, test.s.count())
 	assert.Equal(t, logs, test.s.buffer)
 }
+
+func TestMetricBuffer(t *testing.T) {
+	test := prepareSenderTest(t, []func(w http.ResponseWriter, req *http.Request){})
+	defer func() { test.srv.Close() }()
+
+	assert.Equal(t, test.s.countMetrics(), 0)
+	metrics := exampleTwoIntMetrics()
+
+	dropped, err := test.s.batchMetric(metrics[0])
+	require.NoError(t, err)
+	assert.Nil(t, dropped)
+	assert.Equal(t, 1, test.s.countMetrics())
+	assert.Equal(t, metrics[:1], test.s.metricBuffer)
+
+	dropped, err = test.s.batchMetric(metrics[1])
+	require.Equal(t, err, nil)
+	assert.Nil(t, dropped)
+	assert.Equal(t, 2, test.s.countMetrics())
+	assert.Equal(t, metrics, test.s.metricBuffer)
+}
+
+func TestSendCarbon2(t *testing.T) {
+	test := prepareSenderTest(t, []func(w http.ResponseWriter, req *http.Request){
+		func(w http.ResponseWriter, req *http.Request) {
+			body := extractBody(t, req)
+			expected := `test=test_value test2=second_value metric=test.metric.data unit=bytes  14500 1605534165
+another_test=test_value metric=test.metric.data2 unit=s  123 1605534144
+another_test=test_value metric=test.metric.data2 unit=s  124 1605534145`
+			assert.Equal(t, expected, body)
+			assert.Equal(t, "otelcol", req.Header.Get("X-Sumo-Client"))
+			assert.Equal(t, "application/vnd.sumologic.carbon2", req.Header.Get("Content-Type"))
+		},
+	})
+	defer func() { test.srv.Close() }()
+	test.s.metricBuffer = exampleTwoIntMetrics()
+
+	_, err := test.s.sendMetrics()
+	assert.NoError(t, err)
+}
+
+func TestSendCarbon2Split(t *testing.T) {
+	test := prepareSenderTest(t, []func(w http.ResponseWriter, req *http.Request){
+		func(w http.ResponseWriter, req *http.Request) {
+			body := extractBody(t, req)
+			expected := `test=test_value test2=second_value metric=test.metric.data unit=bytes  14500 1605534165`
+			assert.Equal(t, expected, body)
+		},
+		func(w http.ResponseWriter, req *http.Request) {
+			body := extractBody(t, req)
+			expected := `another_test=test_value metric=test.metric.data2 unit=s  123 1605534144
+another_test=test_value metric=test.metric.data2 unit=s  124 1605534145`
+			assert.Equal(t, expected, body)
+		},
+	})
+	defer func() { test.srv.Close() }()
+	test.s.metricBuffer = exampleTwoIntMetrics()
+	test.s.config.MaxRequestBodySize = 10
+
+	_, err := test.s.sendMetrics()
+	assert.NoError(t, err)
+}
+
+func TestSendCarbon2SplitPartiallyFailed(t *testing.T) {
+	test := prepareSenderTest(t, []func(w http.ResponseWriter, req *http.Request){
+		func(w http.ResponseWriter, req *http.Request) {
+			w.WriteHeader(500)
+
+			body := extractBody(t, req)
+			expected := `test=test_value test2=second_value metric=test.metric.data unit=bytes  14500 1605534165`
+			assert.Equal(t, expected, body)
+		},
+		func(w http.ResponseWriter, req *http.Request) {
+			body := extractBody(t, req)
+			expected := `another_test=test_value metric=test.metric.data2 unit=s  123 1605534144
+another_test=test_value metric=test.metric.data2 unit=s  124 1605534145`
+			assert.Equal(t, expected, body)
+		},
+	})
+	defer func() { test.srv.Close() }()
+	test.s.metricBuffer = exampleTwoIntMetrics()
+	test.s.config.MaxRequestBodySize = 10
+
+	dropped, err := test.s.sendMetrics()
+	assert.Error(t, err)
+	assert.Equal(t, exampleTwoIntMetrics()[:1], dropped)
+}
+
+func TestSendCarbon2SplitAllFailed(t *testing.T) {
+	test := prepareSenderTest(t, []func(w http.ResponseWriter, req *http.Request){
+		func(w http.ResponseWriter, req *http.Request) {
+			w.WriteHeader(404)
+
+			body := extractBody(t, req)
+			expected := `test=test_value test2=second_value metric=test.metric.data unit=bytes  14500 1605534165`
+			assert.Equal(t, expected, body)
+		},
+		func(w http.ResponseWriter, req *http.Request) {
+			w.WriteHeader(404)
+
+			body := extractBody(t, req)
+			expected := `another_test=test_value metric=test.metric.data2 unit=s  123 1605534144
+another_test=test_value metric=test.metric.data2 unit=s  124 1605534145`
+			assert.Equal(t, expected, body)
+		},
+	})
+	defer func() { test.srv.Close() }()
+	test.s.metricBuffer = exampleTwoIntMetrics()
+	test.s.config.MaxRequestBodySize = 10
+
+	dropped, err := test.s.sendMetrics()
+	assert.Error(t, err)
+	assert.Equal(t, exampleTwoIntMetrics(), dropped)
+}
+
+func TestSendCarbon2Double(t *testing.T) {
+	test := prepareSenderTest(t, []func(w http.ResponseWriter, req *http.Request){
+		func(w http.ResponseWriter, req *http.Request) {
+			body := extractBody(t, req)
+			expected := `test=test_value test2=second_value metric=test.metric.data unit=bytes  14.5 1605534165
+another_test=test_value metric=test.metric.data2 unit=s  1.23 1605534144
+another_test=test_value metric=test.metric.data2 unit=s  1.24 1605534145`
+			assert.Equal(t, expected, body)
+			assert.Equal(t, "otelcol", req.Header.Get("X-Sumo-Client"))
+			assert.Equal(t, "application/vnd.sumologic.carbon2", req.Header.Get("Content-Type"))
+		},
+	})
+	defer func() { test.srv.Close() }()
+	test.s.metricBuffer = exampleTwoDoubleMetrics()
+
+	_, err := test.s.sendMetrics()
+	assert.NoError(t, err)
+}
