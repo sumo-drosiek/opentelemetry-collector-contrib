@@ -113,3 +113,31 @@ func (f *filter) GetMetadata(attributes pdata.AttributeMap) Fields {
 
 	return Fields(strings.Join(metadata, ", "))
 }
+
+// Carbon2TagString  returns all attributes as map of strings
+func (f *filter) Carbon2TagString(record metricPair) string {
+	length := record.attributes.Len()
+
+	if _, exists := record.attributes.Get("metric"); exists {
+		length++
+	}
+
+	if _, exists := record.attributes.Get("unit"); exists {
+		length++
+	}
+
+	returnValue := make([]string, 0, length)
+	record.attributes.ForEach(func(k string, v pdata.AttributeValue) {
+		keyName := k
+
+		if k == "name" || k == "unit" {
+			keyName = fmt.Sprintf("_%s", k)
+		}
+		returnValue = append(returnValue, fmt.Sprintf("%s=%s", keyName, f.convertAttributeToString(v)))
+	})
+
+	returnValue = append(returnValue, fmt.Sprintf("metric=%s", record.metric.Name()))
+	returnValue = append(returnValue, fmt.Sprintf("unit=%s", record.metric.Unit()))
+
+	return strings.Join(returnValue, " ")
+}
