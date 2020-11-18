@@ -56,6 +56,9 @@ func prepareSenderTest(t *testing.T, cb []func(w http.ResponseWriter, req *http.
 	f, err := newFilter([]string{})
 	require.NoError(t, err)
 
+	c, err := newCompressor(NoCompression)
+	require.NoError(t, err)
+
 	return &senderTest{
 		srv: testServer,
 		s: newSender(
@@ -65,6 +68,7 @@ func prepareSenderTest(t *testing.T, cb []func(w http.ResponseWriter, req *http.
 				Timeout: cfg.HTTPClientSettings.Timeout,
 			},
 			f,
+			c,
 		),
 	}
 }
@@ -413,4 +417,52 @@ func TestInvalidPipeline(t *testing.T) {
 
 	err := test.s.send("invalidPipeline", strings.NewReader(""), "")
 	assert.EqualError(t, err, `unexpected pipeline`)
+}
+
+func TestSendCompressGzip(t *testing.T) {
+	test := prepareSenderTest(t, []func(res http.ResponseWriter, req *http.Request){
+		func(res http.ResponseWriter, req *http.Request) {
+			res.WriteHeader(200)
+			res.Write([]byte(""))
+			body := decodeGzip(t, req.Body)
+			assert.Equal(t, "gzip", req.Header.Get("Content-Encoding"))
+			assert.Equal(t, "Some example log", body)
+		},
+	})
+	defer func() { test.srv.Close() }()
+
+	test.s.config.CompressEncoding = "gzip"
+
+	c, err := newCompressor("gzip")
+	require.NoError(t, err)
+
+	test.s.compressor = c
+	reader := strings.NewReader("Some example log")
+
+	err = test.s.send(LogsPipeline, reader, "some_metadata")
+	require.NoError(t, err)
+}
+
+func TestSendCompressDeflate(t *testing.T) {
+	test := prepareSenderTest(t, []func(res http.ResponseWriter, req *http.Request){
+		func(res http.ResponseWriter, req *http.Request) {
+			res.WriteHeader(200)
+			res.Write([]byte(""))
+			body := decodeDeflate(t, req.Body)
+			assert.Equal(t, "deflate", req.Header.Get("Content-Encoding"))
+			assert.Equal(t, "Some example log", body)
+		},
+	})
+	defer func() { test.srv.Close() }()
+
+	test.s.config.CompressEncoding = "deflate"
+
+	c, err := newCompressor("deflate")
+	require.NoError(t, err)
+
+	test.s.compressor = c
+	reader := strings.NewReader("Some example log")
+
+	err = test.s.send(LogsPipeline, reader, "some_metadata")
+	require.NoError(t, err)
 }
