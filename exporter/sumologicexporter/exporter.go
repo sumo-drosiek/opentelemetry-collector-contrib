@@ -101,9 +101,9 @@ func newLogsExporter(
 	)
 }
 
-// pushLogsData groups data with common metadata and send them as separate batched requests
-// it returns number of unsent logs and error which contains list of dropped records
-// so they can be handle by the OTC retries mechanisms
+// pushLogsData groups data with common metadata and sends them as separate batched requests.
+// It returns the number of unsent logs and error which contains list of dropped records
+// so they can be handled by OTC retry mechanism
 func (se *sumologicexporter) pushLogsData(_ context.Context, ld pdata.Logs) (int, error) {
 	var (
 		currentMetadata  Fields
@@ -114,16 +114,19 @@ func (se *sumologicexporter) pushLogsData(_ context.Context, ld pdata.Logs) (int
 	)
 
 	// Iterate over ResourceLogs
-	for i := 0; i < ld.ResourceLogs().Len(); i++ {
-		resource := ld.ResourceLogs().At(i)
+	rl := ld.ResourceLogs()
+	for i := 0; i < rl.Len(); i++ {
+		resource := rl.At(i)
 
+		ill := resource.InstrumentationLibraryLogs()
 		// iterate over InstrumentationLibraryLogs
-		for j := 0; j < resource.InstrumentationLibraryLogs().Len(); j++ {
-			library := resource.InstrumentationLibraryLogs().At(j)
+		for j := 0; j < ill.Len(); j++ {
+			library := ill.At(j)
 
 			// iterate over Logs
-			for k := 0; k < library.Logs().Len(); k++ {
-				log := library.Logs().At(k)
+			ll := library.Logs()
+			for k := 0; k < ll.Len(); k++ {
+				log := ll.At(k)
 				currentMetadata = sdr.filter.GetMetadata(log.Attributes())
 
 				// If metadata differs from currently buffered, flush the buffer
@@ -159,10 +162,15 @@ func (se *sumologicexporter) pushLogsData(_ context.Context, ld pdata.Logs) (int
 	if len(droppedRecords) > 0 {
 		// Move all dropped records to Logs
 		droppedLogs := pdata.NewLogs()
-		droppedLogs.ResourceLogs().Resize(1)
-		droppedLogs.ResourceLogs().At(0).InstrumentationLibraryLogs().Resize(1)
+		rss := droppedLogs.ResourceLogs()
+		rss.Resize(1)
+
+		lib := rss.At(0).InstrumentationLibraryLogs()
+		lib.Resize(1)
+		llogs := lib.At(0).Logs()
+
 		for _, record := range droppedRecords {
-			droppedLogs.ResourceLogs().At(0).InstrumentationLibraryLogs().At(0).Logs().Append(record)
+			llogs.Append(record)
 		}
 
 		return len(droppedRecords), consumererror.PartialLogsError(componenterror.CombineErrors(errors), droppedLogs)
