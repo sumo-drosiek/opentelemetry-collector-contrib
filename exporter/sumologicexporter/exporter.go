@@ -200,20 +200,21 @@ func newMetricsExporter(
 	)
 }
 
-// pushLogsData groups data with common metadata and send them as separate batched requests
+// pushMetricsData groups data with common metadata and send them as separate batched requests
 // it returns number of unsent metrics and error which contains list of dropped records
 // so they can be handle by the OTC retry mechanism
 func (se *sumologicexporter) pushMetricsData(_ context.Context, ld pdata.Metrics) (int, error) {
 	var (
 		errors         []error
-		sdr            *sender = newSender(se.config, se.client, se.filter)
+		sdr            = newSender(se.config, se.client, se.filter)
 		droppedRecords []metricPair
 		attributes     pdata.AttributeMap
 	)
 
 	// Iterate over ResourceMetrics
-	for i := 0; i < ld.ResourceMetrics().Len(); i++ {
-		resource := ld.ResourceMetrics().At(i)
+	rms := ld.ResourceMetrics()
+	for i := 0; i < rms.Len(); i++ {
+		resource := rms.At(i)
 
 		if resource.IsNil() {
 			continue
@@ -222,15 +223,17 @@ func (se *sumologicexporter) pushMetricsData(_ context.Context, ld pdata.Metrics
 		attributes = resource.Resource().Attributes()
 
 		// iterate over InstrumentationLibraryMetrics
-		for j := 0; j < resource.InstrumentationLibraryMetrics().Len(); j++ {
-			library := resource.InstrumentationLibraryMetrics().At(j)
+		ilm := resource.InstrumentationLibraryMetrics()
+		for j := 0; j < ilm.Len(); j++ {
+			library := ilm.At(j)
 			if library.IsNil() {
 				continue
 			}
 
 			// iterate over Metrics
-			for k := 0; k < library.Metrics().Len(); k++ {
-				metric := library.Metrics().At(k)
+			lms := library.Metrics()
+			for k := 0; k < lms.Len(); k++ {
+				metric := lms.At(k)
 				if metric.IsNil() {
 					continue
 				}
@@ -258,12 +261,14 @@ func (se *sumologicexporter) pushMetricsData(_ context.Context, ld pdata.Metrics
 	if len(droppedRecords) > 0 {
 		// Move all dropped records to Metrics
 		droppedMetrics := pdata.NewMetrics()
-		droppedMetrics.ResourceMetrics().Resize(len(droppedRecords))
+		rms := droppedMetrics.ResourceMetrics()
+		rms.Resize(len(droppedRecords))
 		for num, record := range droppedRecords {
-			droppedMetrics.ResourceMetrics().At(num).Resource().InitEmpty()
-			record.attributes.CopyTo(droppedMetrics.ResourceMetrics().At(num).Resource().Attributes())
-			droppedMetrics.ResourceMetrics().At(num).InstrumentationLibraryMetrics().Resize(1)
-			droppedMetrics.ResourceMetrics().At(num).InstrumentationLibraryMetrics().At(0).Metrics().Append(record.metric)
+			m := droppedMetrics.ResourceMetrics().At(num)
+			m.Resource().InitEmpty()
+			record.attributes.CopyTo(m.Resource().Attributes())
+			m.InstrumentationLibraryMetrics().Resize(1)
+			m.InstrumentationLibraryMetrics().At(0).Metrics().Append(record.metric)
 		}
 
 		return len(droppedRecords), consumererror.PartialMetricsError(componenterror.CombineErrors(errors), droppedMetrics)
