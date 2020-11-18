@@ -3,6 +3,7 @@ module github.com/open-telemetry/opentelemetry-collector-contrib/exporter/sumolo
 go 1.14
 
 require (
+	github.com/klauspost/pgzip v1.2.5
 	github.com/stretchr/testify v1.6.1
 	go.opentelemetry.io/collector v0.14.1-0.20201112191733-c6d9a2be2223
 )
