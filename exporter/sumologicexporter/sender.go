@@ -309,6 +309,26 @@ func (s *sender) batchMetric(metric metricPair) ([]metricPair, error) {
 	return nil, nil
 }
 
+// Carbon2IntRecord converts IntDataPoint to carbon2 metric string
+// with additional information from metricPair
+func (s *sender) Carbon2IntRecord(record metricPair, dataPoint pdata.IntDataPoint) string {
+	return fmt.Sprintf("%s  %d %d",
+		s.filter.Carbon2TagString(record),
+		dataPoint.Value(),
+		dataPoint.Timestamp()/1e9,
+	)
+}
+
+// Carbon2DoubleRecord converts DoubleDataPoint to carbon2 metric string
+// with additional information from metricPair
+func (s *sender) Carbon2DoubleRecord(record metricPair, dataPoint pdata.DoubleDataPoint) string {
+	return fmt.Sprintf("%s  %g %d",
+		s.filter.Carbon2TagString(record),
+		dataPoint.Value(),
+		dataPoint.Timestamp()/1e9,
+	)
+}
+
 func (s *sender) sendMetricsCarbon2Format() ([]metricPair, error) {
 	var (
 		body strings.Builder
@@ -325,46 +345,22 @@ func (s *sender) sendMetricsCarbon2Format() ([]metricPair, error) {
 		case pdata.MetricDataTypeIntGauge:
 			for i := 0; i < record.metric.IntGauge().DataPoints().Len(); i++ {
 				dataPoint := record.metric.IntGauge().DataPoints().At(i)
-				nextLines = append(nextLines,
-					fmt.Sprintf("%s  %d %d",
-						s.filter.Carbon2TagString(record),
-						dataPoint.Value(),
-						dataPoint.Timestamp()/1e9,
-					),
-				)
+				nextLines = append(nextLines, s.Carbon2IntRecord(record, dataPoint))
 			}
 		case pdata.MetricDataTypeIntSum:
 			for i := 0; i < record.metric.IntSum().DataPoints().Len(); i++ {
 				dataPoint := record.metric.IntSum().DataPoints().At(i)
-				nextLines = append(nextLines,
-					fmt.Sprintf("%s  %d %d",
-						s.filter.Carbon2TagString(record),
-						dataPoint.Value(),
-						dataPoint.Timestamp()/1e9,
-					),
-				)
+				nextLines = append(nextLines, s.Carbon2IntRecord(record, dataPoint))
 			}
 		case pdata.MetricDataTypeDoubleGauge:
 			for i := 0; i < record.metric.DoubleGauge().DataPoints().Len(); i++ {
 				dataPoint := record.metric.DoubleGauge().DataPoints().At(i)
-				nextLines = append(nextLines,
-					fmt.Sprintf("%s  %g %d",
-						s.filter.Carbon2TagString(record),
-						dataPoint.Value(),
-						dataPoint.Timestamp()/1e9,
-					),
-				)
+				nextLines = append(nextLines, s.Carbon2DoubleRecord(record, dataPoint))
 			}
 		case pdata.MetricDataTypeDoubleSum:
 			for i := 0; i < record.metric.DoubleSum().DataPoints().Len(); i++ {
 				dataPoint := record.metric.DoubleSum().DataPoints().At(i)
-				nextLines = append(nextLines,
-					fmt.Sprintf("%s  %g %d",
-						s.filter.Carbon2TagString(record),
-						dataPoint.Value(),
-						dataPoint.Timestamp()/1e9,
-					),
-				)
+				nextLines = append(nextLines, s.Carbon2DoubleRecord(record, dataPoint))
 			}
 		// Skip histogram metrics
 		case pdata.MetricDataTypeDoubleHistogram:
