@@ -48,7 +48,7 @@ func newSender(cfg *Config, cl *http.Client, f filter) *sender {
 	}
 }
 
-// Send sends data to sumologic
+// send sends data to sumologic
 func (s *sender) send(pipeline PipelineType, body io.Reader, fields Fields) error {
 	// Add headers
 	req, err := http.NewRequest(http.MethodPost, s.config.HTTPClientSettings.Endpoint, body)
@@ -103,11 +103,16 @@ func (s *sender) sendLogs(fields Fields) ([]pdata.LogRecord, error) {
 	}
 }
 
+// sendLogsTextFormat sends log records from the buffer as text data
+// and as the result of execution returns array of records which has not been
+// sent correctly and error
 func (s *sender) sendLogsTextFormat(fields Fields) ([]pdata.LogRecord, error) {
 	var (
-		body           strings.Builder
-		errs           []error
+		body strings.Builder
+		errs []error
+		// droppedRecords tracks all dropped records
 		droppedRecords []pdata.LogRecord
+		// currentRecords tracks records which are being actually processed
 		currentRecords []pdata.LogRecord
 	)
 
@@ -146,6 +151,9 @@ func (s *sender) sendLogsTextFormat(fields Fields) ([]pdata.LogRecord, error) {
 	return droppedRecords, nil
 }
 
+// sendLogsJSONFormat sends log records from the buffer as json data
+// and as the result of execution returns array of records which has not been
+// sent correctly and error
 func (s *sender) sendLogsJSONFormat(fields Fields) ([]pdata.LogRecord, error) {
 	var (
 		body strings.Builder
