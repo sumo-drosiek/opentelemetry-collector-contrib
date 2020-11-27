@@ -214,31 +214,31 @@ func (se *sumologicexporter) pushMetricsData(_ context.Context, ld pdata.Metrics
 	// Iterate over ResourceMetrics
 	rms := ld.ResourceMetrics()
 	for i := 0; i < rms.Len(); i++ {
-		resource := rms.At(i)
+		rm := rms.At(i)
 
-		if resource.IsNil() {
+		if rm.IsNil() {
 			continue
 		}
 
-		attributes = resource.Resource().Attributes()
+		attributes = rm.Resource().Attributes()
 
 		// iterate over InstrumentationLibraryMetrics
-		ilm := resource.InstrumentationLibraryMetrics()
-		for j := 0; j < ilm.Len(); j++ {
-			library := ilm.At(j)
-			if library.IsNil() {
+		ilms := rm.InstrumentationLibraryMetrics()
+		for j := 0; j < ilms.Len(); j++ {
+			ilm := ilms.At(j)
+			if ilm.IsNil() {
 				continue
 			}
 
 			// iterate over Metrics
-			lms := library.Metrics()
-			for k := 0; k < lms.Len(); k++ {
-				metric := lms.At(k)
-				if metric.IsNil() {
+			ms := ilm.Metrics()
+			for k := 0; k < ms.Len(); k++ {
+				m := ms.At(k)
+				if m.IsNil() {
 					continue
 				}
 				mp := metricPair{
-					metric:     metric,
+					metric:     m,
 					attributes: attributes,
 				}
 				// add metric to the buffer
@@ -264,11 +264,13 @@ func (se *sumologicexporter) pushMetricsData(_ context.Context, ld pdata.Metrics
 		rms := droppedMetrics.ResourceMetrics()
 		rms.Resize(len(droppedRecords))
 		for num, record := range droppedRecords {
-			m := droppedMetrics.ResourceMetrics().At(num)
-			m.Resource().InitEmpty()
-			record.attributes.CopyTo(m.Resource().Attributes())
-			m.InstrumentationLibraryMetrics().Resize(1)
-			m.InstrumentationLibraryMetrics().At(0).Metrics().Append(record.metric)
+			rm := droppedMetrics.ResourceMetrics().At(num)
+			rm.Resource().InitEmpty()
+			record.attributes.CopyTo(rm.Resource().Attributes())
+
+			ilms := rm.InstrumentationLibraryMetrics()
+			ilms.Resize(1)
+			ilms.At(0).Metrics().Append(record.metric)
 		}
 
 		return len(droppedRecords), consumererror.PartialMetricsError(componenterror.CombineErrors(errors), droppedMetrics)
