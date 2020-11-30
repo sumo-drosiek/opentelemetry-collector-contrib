@@ -236,3 +236,42 @@ func TestCarbon2TagString(t *testing.T) {
 	data = f.Carbon2TagString(metric)
 	assert.Equal(t, "another_test=test_value metric=test.metric.data2 unit=s", data)
 }
+
+func TestSanitizePrometheusKey(t *testing.T) {
+	regexes := []string{}
+	f, err := newFilter(regexes)
+	require.NoError(t, err)
+
+	key := "&^*123-abc-ABC!?"
+	expected := "___123_abc_ABC__"
+	assert.Equal(t, expected, f.sanitizePrometheusKey(key))
+}
+
+func TestSanitizePrometheusValue(t *testing.T) {
+	regexes := []string{}
+	f, err := newFilter(regexes)
+	require.NoError(t, err)
+
+	value := `&^*123-abc-ABC!?"\\n`
+	expected := `&^*123-abc-ABC!?\"\\\n`
+	assert.Equal(t, expected, f.sanitizePrometheusValue(value))
+}
+
+func TestPrometheusTagStringNoAttributes(t *testing.T) {
+	regexes := []string{}
+	f, err := newFilter(regexes)
+	require.NoError(t, err)
+
+	mp := exampleTwoIntMetrics()[0]
+	mp.attributes.InitEmptyWithCapacity(0)
+	assert.Equal(t, "", f.prometheusTagString(mp))
+}
+
+func TestPrometheusTagString(t *testing.T) {
+	regexes := []string{}
+	f, err := newFilter(regexes)
+	require.NoError(t, err)
+
+	mp := exampleTwoIntMetrics()[0]
+	assert.Equal(t, `{test="test_value", test2="second_value"}`, f.prometheusTagString(mp))
+}
