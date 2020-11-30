@@ -287,12 +287,65 @@ func (s *sender) countMetrics() int {
 
 // sendMetrics sends metrics in right format basing on the s.config.MetricFormat
 func (s *sender) sendMetrics() ([]metricPair, error) {
-	switch s.config.MetricFormat {
-	case Carbon2Format:
-		return s.sendMetricsCarbon2Format()
-	default:
-		return nil, errors.New("unexpected metric format")
+	var (
+		body strings.Builder
+		errs []error
+		droppedRecords []metricPair
+		currentRecords []metricPair
+		nextLines      []string
+		formattedLine  string
+		err            error
+	)
+
+	for _, record := range s.metricBuffer {
+		switch s.config.MetricFormat {
+		case Carbon2Format:
+			formattedLine, err = s.metric2Carbon2(record)
+		default:
+			return nil, errors.New("unexpected metric format")
+		}
+		if err != nil {
+			return nil, err
+		}
+		if len(formattedLine) == 0 {
+			// Skip empty string
+			return nil, nil
+		}
+
+		sent, appended, err := s.appendAndSend(formattedLine, MetricsPipeline, &body, "")
+		if err != nil {
+			errs = append(errs, err)
+			if sent {
+				droppedRecords = append(droppedRecords, currentRecords...)
+			}
+
+			if !appended {
+				droppedRecords = append(droppedRecords, record)
+			}
+		}
+
+		nextLines = nextLines[:0]
+
+		// If data was sent, cleanup the currentRecords
+		if sent {
+			currentRecords = currentRecords[:0]
+		}
+
+		// If log has been appended to body, add it to the currentRecords
+		if appended {
+			currentRecords = append(currentRecords, record)
+		}
 	}
+
+	if err := s.send(MetricsPipeline, strings.NewReader(body.String()), ""); err != nil {
+		errs = append(errs, err)
+		droppedRecords = append(droppedRecords, currentRecords...)
+	}
+
+	if len(errs) > 0 {
+		return droppedRecords, componenterror.CombineErrors(errs)
+	}
+	return droppedRecords, nil
 }
 
 // batchMetric adds metric to the metrics buffer and flushes them if buffer is full to avoid overflow
@@ -329,78 +382,36 @@ func (s *sender) Carbon2DoubleRecord(record metricPair, dataPoint pdata.DoubleDa
 	)
 }
 
-func (s *sender) sendMetricsCarbon2Format() ([]metricPair, error) {
-	var (
-		body strings.Builder
-		errs []error
-		// droppedRecords tracks all dropped records
-		droppedRecords []metricPair
-		// currentRecords tracks records which are being actually processed
-		currentRecords []metricPair
-		nextLines      []string
-	)
+func (s *sender) metric2Carbon2(record metricPair) (string, error) {
+	var nextLines []string
 
-	for _, record := range s.metricBuffer {
-		switch record.metric.DataType() {
-		case pdata.MetricDataTypeIntGauge:
-			for i := 0; i < record.metric.IntGauge().DataPoints().Len(); i++ {
-				dataPoint := record.metric.IntGauge().DataPoints().At(i)
-				nextLines = append(nextLines, s.Carbon2IntRecord(record, dataPoint))
-			}
-		case pdata.MetricDataTypeIntSum:
-			for i := 0; i < record.metric.IntSum().DataPoints().Len(); i++ {
-				dataPoint := record.metric.IntSum().DataPoints().At(i)
-				nextLines = append(nextLines, s.Carbon2IntRecord(record, dataPoint))
-			}
-		case pdata.MetricDataTypeDoubleGauge:
-			for i := 0; i < record.metric.DoubleGauge().DataPoints().Len(); i++ {
-				dataPoint := record.metric.DoubleGauge().DataPoints().At(i)
-				nextLines = append(nextLines, s.Carbon2DoubleRecord(record, dataPoint))
-			}
-		case pdata.MetricDataTypeDoubleSum:
-			for i := 0; i < record.metric.DoubleSum().DataPoints().Len(); i++ {
-				dataPoint := record.metric.DoubleSum().DataPoints().At(i)
-				nextLines = append(nextLines, s.Carbon2DoubleRecord(record, dataPoint))
-			}
-		// Skip histogram metrics
-		case pdata.MetricDataTypeDoubleHistogram:
-		case pdata.MetricDataTypeIntHistogram:
-		default:
-			// Nothing to do here
+	switch record.metric.DataType() {
+	case pdata.MetricDataTypeIntGauge:
+		for i := 0; i < record.metric.IntGauge().DataPoints().Len(); i++ {
+			dataPoint := record.metric.IntGauge().DataPoints().At(i)
+			nextLines = append(nextLines, s.Carbon2IntRecord(record, dataPoint))
 		}
-
-		sent, appended, err := s.appendAndSend(strings.Join(nextLines, "\n"), MetricsPipeline, &body, "")
-		if err != nil {
-			errs = append(errs, err)
-			if sent {
-				droppedRecords = append(droppedRecords, currentRecords...)
-			}
-
-			if !appended {
-				droppedRecords = append(droppedRecords, record)
-			}
+	case pdata.MetricDataTypeIntSum:
+		for i := 0; i < record.metric.IntSum().DataPoints().Len(); i++ {
+			dataPoint := record.metric.IntSum().DataPoints().At(i)
+			nextLines = append(nextLines, s.Carbon2IntRecord(record, dataPoint))
 		}
-
-		nextLines = nextLines[:0]
-
-		// If data was sent, cleanup the currentRecords
-		if sent {
-			currentRecords = currentRecords[:0]
+	case pdata.MetricDataTypeDoubleGauge:
+		for i := 0; i < record.metric.DoubleGauge().DataPoints().Len(); i++ {
+			dataPoint := record.metric.DoubleGauge().DataPoints().At(i)
+			nextLines = append(nextLines, s.Carbon2DoubleRecord(record, dataPoint))
 		}
-
-		// If log has been appended to body, add it to the currentRecords
-		if appended {
-			currentRecords = append(currentRecords, record)
+	case pdata.MetricDataTypeDoubleSum:
+		for i := 0; i < record.metric.DoubleSum().DataPoints().Len(); i++ {
+			dataPoint := record.metric.DoubleSum().DataPoints().At(i)
+			nextLines = append(nextLines, s.Carbon2DoubleRecord(record, dataPoint))
 		}
+	// Skip histogram metrics
+	case pdata.MetricDataTypeDoubleHistogram:
+	case pdata.MetricDataTypeIntHistogram:
+	default:
+		// Nothing to do here
 	}
 
-	if err := s.send(MetricsPipeline, strings.NewReader(body.String()), ""); err != nil {
-		errs = append(errs, err)
-		droppedRecords = append(droppedRecords, currentRecords...)
-	}
-
-	if len(errs) > 0 {
-		return droppedRecords, componenterror.CombineErrors(errs)
-	}
-	return droppedRecords, nil
+	return strings.Join(nextLines, "\n"), nil
 }
