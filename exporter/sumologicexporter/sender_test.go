@@ -60,6 +60,9 @@ func prepareSenderTest(t *testing.T, cb []func(w http.ResponseWriter, req *http.
 	f, err := newFilter([]string{})
 	require.NoError(t, err)
 
+	pf, err := newPrometheusFormatter()
+	require.NoError(t, err)
+
 	return &senderTest{
 		srv: testServer,
 		exp: exp,
@@ -69,6 +72,7 @@ func prepareSenderTest(t *testing.T, cb []func(w http.ResponseWriter, req *http.
 				Timeout: cfg.HTTPClientSettings.Timeout,
 			},
 			f,
+			pf,
 		),
 	}
 }

@@ -28,9 +28,10 @@ import (
 )
 
 type sumologicexporter struct {
-	config *Config
-	client *http.Client
-	filter filter
+	config     *Config
+	client     *http.Client
+	filter     filter
+	prometheus prometheusFormatter
 }
 
 func initExporter(cfg *Config) (*sumologicexporter, error) {
@@ -71,10 +72,16 @@ func initExporter(cfg *Config) (*sumologicexporter, error) {
 		return nil, fmt.Errorf("failed to create HTTP Client: %w", err)
 	}
 
+	pf, err := newPrometheusFormatter()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Prometheus formatter: %w", err)
+	}
+
 	se := &sumologicexporter{
-		config: cfg,
-		client: httpClient,
-		filter: f,
+		config:     cfg,
+		client:     httpClient,
+		filter:     f,
+		prometheus: pf,
 	}
 
 	return se, nil
@@ -109,7 +116,7 @@ func (se *sumologicexporter) pushLogsData(_ context.Context, ld pdata.Logs) (int
 		currentMetadata  Fields
 		previousMetadata Fields
 		errors           []error
-		sdr              = newSender(se.config, se.client, se.filter)
+		sdr              = newSender(se.config, se.client, se.filter, se.prometheus)
 		droppedRecords   []pdata.LogRecord
 	)
 
@@ -206,7 +213,7 @@ func newMetricsExporter(
 func (se *sumologicexporter) pushMetricsData(_ context.Context, ld pdata.Metrics) (int, error) {
 	var (
 		errors         []error
-		sdr            = newSender(se.config, se.client, se.filter)
+		sdr            = newSender(se.config, se.client, se.filter, se.prometheus)
 		droppedRecords []metricPair
 		attributes     pdata.AttributeMap
 	)

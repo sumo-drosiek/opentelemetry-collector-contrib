@@ -39,6 +39,7 @@ type sender struct {
 	config       *Config
 	client       *http.Client
 	filter       filter
+	prometheus   prometheusFormatter
 }
 
 const (
@@ -47,11 +48,12 @@ const (
 	maxBufferSize int = 1024 * 1024
 )
 
-func newSender(cfg *Config, cl *http.Client, f filter) *sender {
+func newSender(cfg *Config, cl *http.Client, f filter, p prometheusFormatter) *sender {
 	return &sender{
-		config: cfg,
-		client: cl,
-		filter: f,
+		config:     cfg,
+		client:     cl,
+		filter:     f,
+		prometheus: p,
 	}
 }
 
@@ -85,6 +87,8 @@ func (s *sender) send(pipeline PipelineType, body io.Reader, fields Fields) erro
 		switch s.config.MetricFormat {
 		case Carbon2Format:
 			req.Header.Add("Content-Type", "application/vnd.sumologic.carbon2")
+		case PrometheusFormat:
+			req.Header.Add("Content-Type", "application/vnd.sumologic.prometheus")
 		default:
 			// ToDo: Implement metrics pipeline
 			return errors.New("current sender version doesn't support metrics")
@@ -288,26 +292,30 @@ func (s *sender) countMetrics() int {
 // sendMetrics sends metrics in right format basing on the s.config.MetricFormat
 func (s *sender) sendMetrics() ([]metricPair, error) {
 	var (
-		body strings.Builder
-		errs []error
+		body           strings.Builder
+		errs           []error
 		droppedRecords []metricPair
 		currentRecords []metricPair
 		nextLines      []string
 		formattedLine  string
 		err            error
 	)
-
 	for _, record := range s.metricBuffer {
 		switch s.config.MetricFormat {
 		case Carbon2Format:
 			formattedLine, err = s.metric2Carbon2(record)
+		case PrometheusFormat:
+			formattedLine, err = s.prometheus.metric2Prometheus(record)
 		default:
+			fmt.Printf("Send metrics: invalid format")
 			return nil, errors.New("unexpected metric format")
 		}
 		if err != nil {
+			fmt.Printf("Send metrics: error")
 			return nil, err
 		}
 		if len(formattedLine) == 0 {
+			fmt.Printf("Send metrics: empty")
 			// Skip empty string
 			return nil, nil
 		}
