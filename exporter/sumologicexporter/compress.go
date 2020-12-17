@@ -18,9 +18,10 @@ import (
 	"bytes"
 	"compress/flate"
 	"compress/gzip"
-	"fmt"
 	"io"
 	"io/ioutil"
+
+	"github.com/pkg/errors"
 )
 
 type compressor struct {
@@ -52,7 +53,7 @@ func newCompressor(format CompressEncodingType) (compressor, error) {
 	case NoCompression:
 		writer = nil
 	default:
-		return compressor{}, fmt.Errorf("invalid format: %s", format)
+		return compressor{}, errors.Errorf("invalid format: %s", format)
 	}
 
 	return compressor{

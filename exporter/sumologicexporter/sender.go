@@ -18,12 +18,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
 
+	"github.com/pkg/errors"
 	"go.opentelemetry.io/collector/component/componenterror"
 	"go.opentelemetry.io/collector/consumer/pdata"
 )
@@ -91,7 +90,7 @@ func (s *sender) send(ctx context.Context, pipeline PipelineType, body io.Reader
 		req.Header.Set("Content-Encoding", "deflate")
 	case NoCompression:
 	default:
-		return fmt.Errorf("invalid content encoding: %s", s.config.CompressEncoding)
+		return errors.Errorf("invalid content encoding: %s", s.config.CompressEncoding)
 	}
 
 	req.Header.Add("X-Sumo-Client", s.config.Client)
@@ -124,7 +123,7 @@ func (s *sender) send(ctx context.Context, pipeline PipelineType, body io.Reader
 		return err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return fmt.Errorf("error during sending data: %s", resp.Status)
+		return errors.Errorf("error during sending data: %s", resp.Status)
 	}
 	return nil
 }

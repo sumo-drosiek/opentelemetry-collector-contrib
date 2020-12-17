@@ -16,8 +16,8 @@ package sumologicexporter
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/pkg/errors"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/configmodels"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
@@ -69,7 +69,7 @@ func createLogsExporter(
 ) (component.LogsExporter, error) {
 	exp, err := newLogsExporter(cfg.(*Config), params)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create the logs exporter: %w", err)
+		return nil, errors.Wrap(err, "failed to create the logs exporter")
 	}
 
 	return exp, nil
