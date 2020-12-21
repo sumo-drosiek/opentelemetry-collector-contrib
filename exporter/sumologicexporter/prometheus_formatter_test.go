@@ -29,7 +29,7 @@ func newTestPrometheusFormatter(t *testing.T) prometheusFormatter {
 	return pf
 }
 
-func TestsanitizeKey(t *testing.T) {
+func TestSanitizeKey(t *testing.T) {
 	f := newTestPrometheusFormatter(t)
 
 	key := "&^*123-abc-ABC!?"
@@ -37,7 +37,7 @@ func TestsanitizeKey(t *testing.T) {
 	assert.Equal(t, expected, f.sanitizeKey(key))
 }
 
-func TestsanitizeValue(t *testing.T) {
+func TestSanitizeValue(t *testing.T) {
 	f := newTestPrometheusFormatter(t)
 
 	value := `&^*123-abc-ABC!?"\\n`
@@ -45,7 +45,7 @@ func TestsanitizeValue(t *testing.T) {
 	assert.Equal(t, expected, f.sanitizeValue(value))
 }
 
-func Testtags2StringNoAttributes(t *testing.T) {
+func TestTags2StringNoLabels(t *testing.T) {
 	f := newTestPrometheusFormatter(t)
 
 	mp := exampleTwoIntMetrics()[0]
@@ -53,7 +53,7 @@ func Testtags2StringNoAttributes(t *testing.T) {
 	assert.Equal(t, prometheusTags(""), f.tags2String(mp.attributes, pdata.NewStringMap()))
 }
 
-func Testtags2String(t *testing.T) {
+func TestTags2String(t *testing.T) {
 	f := newTestPrometheusFormatter(t)
 
 	mp := exampleTwoIntMetrics()[0]
@@ -62,6 +62,14 @@ func Testtags2String(t *testing.T) {
 		prometheusTags(`{test="test_value",test2="second_value"}`),
 		f.tags2String(mp.attributes, pdata.NewStringMap()),
 	)
+}
+
+func TestTags2StringNoAttributes(t *testing.T) {
+	f := newTestPrometheusFormatter(t)
+
+	mp := exampleTwoIntMetrics()[0]
+	mp.attributes.InitEmptyWithCapacity(0)
+	assert.Equal(t, prometheusTags(""), f.tags2String(pdata.NewAttributeMap(), pdata.NewStringMap()))
 }
 
 func TestPrometheusMetricDataTypeIntGauge(t *testing.T) {
