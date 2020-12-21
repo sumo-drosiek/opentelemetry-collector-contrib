@@ -50,14 +50,18 @@ func TestPrometheusTagStringNoAttributes(t *testing.T) {
 
 	mp := exampleTwoIntMetrics()[0]
 	mp.attributes.InitEmptyWithCapacity(0)
-	assert.Equal(t, "", f.prometheusTagString(mp.attributes, pdata.NewStringMap()))
+	assert.Equal(t, prometheusTags(""), f.prometheusTagString(mp.attributes, pdata.NewStringMap()))
 }
 
 func TestPrometheusTagString(t *testing.T) {
 	f := newTestPrometheusFormatter(t)
 
 	mp := exampleTwoIntMetrics()[0]
-	assert.Equal(t, `{test="test_value",test2="second_value"}`, f.prometheusTagString(mp.attributes, pdata.NewStringMap()))
+	assert.Equal(
+		t,
+		prometheusTags(`{test="test_value",test2="second_value"}`),
+		f.prometheusTagString(mp.attributes, pdata.NewStringMap()),
+	)
 }
 
 func TestPrometheusMetricDataTypeIntGauge(t *testing.T) {
