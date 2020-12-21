@@ -35,6 +35,12 @@ type prometheusFormatter struct {
 
 type prometheusTags string
 
+const (
+	prometheusLeTag       string = "le"
+	prometheusQuantileTag string = "quantile"
+	prometheusInfValue    string = "+Inf"
+)
+
 func newPrometheusFormatter() (prometheusFormatter, error) {
 	sanitNameRegex, err := regexp.Compile(`[^0-9a-zA-Z]`)
 	if err != nil {
@@ -279,7 +285,7 @@ func (f *prometheusFormatter) doubleSummary2Strings(record metricPair) []string 
 		additionalAttributes := pdata.NewAttributeMap()
 		for i := 0; i < qs.Len(); i++ {
 			q := qs.At(i)
-			additionalAttributes.UpsertDouble("quantile", q.Quantile())
+			additionalAttributes.UpsertDouble(prometheusQuantileTag, q.Quantile())
 
 			line := f.doubleValueLine(
 				record.metric.Name(),
@@ -324,7 +330,7 @@ func (f *prometheusFormatter) intHistogram2Strings(record metricPair) []string {
 
 		for i, bound := range explicitBounds {
 			cumulative += dp.BucketCounts()[i]
-			additionalAttributes.UpsertDouble("le", bound)
+			additionalAttributes.UpsertDouble(prometheusLeTag, bound)
 
 			line := f.uintValueLine(
 				record.metric.Name(),
@@ -336,7 +342,7 @@ func (f *prometheusFormatter) intHistogram2Strings(record metricPair) []string {
 		}
 
 		cumulative += dp.BucketCounts()[len(explicitBounds)]
-		additionalAttributes.UpsertString("le", "+Inf")
+		additionalAttributes.UpsertString(prometheusLeTag, prometheusInfValue)
 		line := f.uintValueLine(
 			record.metric.Name(),
 			cumulative,
