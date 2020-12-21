@@ -97,7 +97,6 @@ func (f *prometheusFormatter) sanitizeValue(s string) string {
 }
 
 // doubleLine builds metric based on the given arguments where value is float64
-// this function shouldn't be called directly
 func (f *prometheusFormatter) doubleLine(name string, attributes prometheusTags, value float64, timestamp pdata.TimestampUnixNano) string {
 	return fmt.Sprintf(
 		"%s%s %g %d",
@@ -109,7 +108,6 @@ func (f *prometheusFormatter) doubleLine(name string, attributes prometheusTags,
 }
 
 // intLine builds metric based on the given arguments where value is int64
-// this function shouldn't be called directly
 func (f *prometheusFormatter) intLine(name string, attributes prometheusTags, value int64, timestamp pdata.TimestampUnixNano) string {
 	return fmt.Sprintf(
 		"%s%s %d %d",
@@ -121,7 +119,6 @@ func (f *prometheusFormatter) intLine(name string, attributes prometheusTags, va
 }
 
 // uintLine builds metric based on the given arguments where value is uint64
-// this function shouldn't be called directly
 func (f *prometheusFormatter) uintLine(name string, attributes prometheusTags, value uint64, timestamp pdata.TimestampUnixNano) string {
 	return fmt.Sprintf(
 		"%s%s %d %d",
