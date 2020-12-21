@@ -29,38 +29,38 @@ func newTestPrometheusFormatter(t *testing.T) prometheusFormatter {
 	return pf
 }
 
-func TestSanitizePrometheusKey(t *testing.T) {
+func TestsanitizeKey(t *testing.T) {
 	f := newTestPrometheusFormatter(t)
 
 	key := "&^*123-abc-ABC!?"
 	expected := "___123_abc_ABC__"
-	assert.Equal(t, expected, f.sanitizePrometheusKey(key))
+	assert.Equal(t, expected, f.sanitizeKey(key))
 }
 
-func TestSanitizePrometheusValue(t *testing.T) {
+func TestsanitizeValue(t *testing.T) {
 	f := newTestPrometheusFormatter(t)
 
 	value := `&^*123-abc-ABC!?"\\n`
 	expected := `&^*123-abc-ABC!?\"\\\n`
-	assert.Equal(t, expected, f.sanitizePrometheusValue(value))
+	assert.Equal(t, expected, f.sanitizeValue(value))
 }
 
-func TestPrometheusTagStringNoAttributes(t *testing.T) {
+func Testtags2StringNoAttributes(t *testing.T) {
 	f := newTestPrometheusFormatter(t)
 
 	mp := exampleTwoIntMetrics()[0]
 	mp.attributes.InitEmptyWithCapacity(0)
-	assert.Equal(t, prometheusTags(""), f.prometheusTagString(mp.attributes, pdata.NewStringMap()))
+	assert.Equal(t, prometheusTags(""), f.tags2String(mp.attributes, pdata.NewStringMap()))
 }
 
-func TestPrometheusTagString(t *testing.T) {
+func Testtags2String(t *testing.T) {
 	f := newTestPrometheusFormatter(t)
 
 	mp := exampleTwoIntMetrics()[0]
 	assert.Equal(
 		t,
 		prometheusTags(`{test="test_value",test2="second_value"}`),
-		f.prometheusTagString(mp.attributes, pdata.NewStringMap()),
+		f.tags2String(mp.attributes, pdata.NewStringMap()),
 	)
 }
 
@@ -95,7 +95,7 @@ func TestPrometheusMetricDataTypeIntGauge(t *testing.T) {
 	dp.SetTimestamp(1608124662.166 * 1e9)
 	metric.metric.IntGauge().DataPoints().Append(dp)
 
-	result, err := f.metric2Prometheus(metric)
+	result, err := f.metric2String(metric)
 	expected := `gauge_metric_name{foo="bar",remote_name="156920",url="http://example_url"} 124 1608124661166
 gauge_metric_name{foo="bar",remote_name="156955",url="http://another_url"} 245 1608124662166`
 
@@ -134,7 +134,7 @@ func TestPrometheusMetricDataTypeDoubleGauge(t *testing.T) {
 	dp.SetTimestamp(1608124662.186 * 1e9)
 	metric.metric.DoubleGauge().DataPoints().Append(dp)
 
-	result, err := f.metric2Prometheus(metric)
+	result, err := f.metric2String(metric)
 	expected := `gauge_metric_name_double_test{foo="bar",local_name="156720",endpoint="http://example_url"} 33.4 1608124661169
 gauge_metric_name_double_test{foo="bar",local_name="156155",endpoint="http://another_url"} 56.8 1608124662186`
 
@@ -173,7 +173,7 @@ func TestPrometheusMetricDataTypeIntSum(t *testing.T) {
 	dp.SetTimestamp(1608124699.186 * 1e9)
 	metric.metric.IntSum().DataPoints().Append(dp)
 
-	result, err := f.metric2Prometheus(metric)
+	result, err := f.metric2String(metric)
 	expected := `sum_metric_int_test{foo="bar",name="156720",address="http://example_url"} 45 1608124444169
 sum_metric_int_test{foo="bar",name="156155",address="http://another_url"} 1238 1608124699186`
 
@@ -212,7 +212,7 @@ func TestPrometheusMetricDataTypeDoubleSum(t *testing.T) {
 	dp.SetTimestamp(1608424699.186 * 1e9)
 	metric.metric.DoubleSum().DataPoints().Append(dp)
 
-	result, err := f.metric2Prometheus(metric)
+	result, err := f.metric2String(metric)
 	expected := `sum_metric_double_test{foo="bar",pod_name="lorem",namespace="default"} 45.6 1618124444169
 sum_metric_double_test{foo="bar",pod_name="opsum",namespace="kube-config"} 1238.1 1608424699186`
 
@@ -266,7 +266,7 @@ func TestPrometheusMetricDataTypeDoubleSummary(t *testing.T) {
 	dp.SetTimestamp(1608424699.186 * 1e9)
 	metric.metric.DoubleSummary().DataPoints().Append(dp)
 
-	result, err := f.metric2Prometheus(metric)
+	result, err := f.metric2String(metric)
 	expected := `summary_metric_double_test{foo="bar",quantile="0.6",pod_name="dolor",namespace="sumologic"} 0.7 1618124444169
 summary_metric_double_test{foo="bar",quantile="2.6",pod_name="dolor",namespace="sumologic"} 4 1618124444169
 summary_metric_double_test_sum{foo="bar",pod_name="dolor",namespace="sumologic"} 45.6 1618124444169
@@ -315,7 +315,7 @@ func TestPrometheusMetricDataTypeIntHistogram(t *testing.T) {
 	dp.SetCount(5)
 	metric.metric.IntHistogram().DataPoints().Append(dp)
 
-	result, err := f.metric2Prometheus(metric)
+	result, err := f.metric2String(metric)
 	expected := `histogram_metric_int_test{foo="bar",le="0.1",pod_name="dolor",namespace="sumologic"} 0 1618124444169
 histogram_metric_int_test{foo="bar",le="0.2",pod_name="dolor",namespace="sumologic"} 12 1618124444169
 histogram_metric_int_test{foo="bar",le="0.5",pod_name="dolor",namespace="sumologic"} 19 1618124444169
@@ -374,7 +374,7 @@ func TestPrometheusMetricDataTypeDoubleHistogram(t *testing.T) {
 	dp.SetCount(98)
 	metric.metric.DoubleHistogram().DataPoints().Append(dp)
 
-	result, err := f.metric2Prometheus(metric)
+	result, err := f.metric2String(metric)
 	expected := `histogram_metric_double_test{bar="foo",le="0.1",container="dolor",branch="sumologic"} 0 1618124444169
 histogram_metric_double_test{bar="foo",le="0.2",container="dolor",branch="sumologic"} 12 1618124444169
 histogram_metric_double_test{bar="foo",le="0.5",container="dolor",branch="sumologic"} 19 1618124444169

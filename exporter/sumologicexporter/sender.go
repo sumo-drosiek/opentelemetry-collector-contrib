@@ -305,7 +305,7 @@ func (s *sender) sendMetrics() ([]metricPair, error) {
 		case Carbon2Format:
 			formattedLine, err = s.metric2Carbon2(record)
 		case PrometheusFormat:
-			formattedLine, err = s.prometheus.metric2Prometheus(record)
+			formattedLine, err = s.prometheus.metric2String(record)
 		default:
 			fmt.Printf("Send metrics: invalid format")
 			return nil, errors.New("unexpected metric format")
