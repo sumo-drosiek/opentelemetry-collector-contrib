@@ -23,21 +23,6 @@ import (
 	tracetranslator "go.opentelemetry.io/collector/translator/trace"
 )
 
-type dataPointCountable interface {
-	dataPointCommon
-	Count() int
-}
-
-type dataPointValuableDouble interface {
-	dataPointCommon
-	Value() float64
-}
-
-type dataPointValuableInt interface {
-	dataPointCommon
-	Value() int64
-}
-
 type dataPointCommon interface {
 	Timestamp() pdata.TimestampUnixNano
 	LabelsMap() pdata.StringMap
@@ -172,7 +157,7 @@ func (f *prometheusFormatter) prometheusUIntOverwriteValue(name string, value ui
 	)
 }
 
-func (f *prometheusFormatter) prometheusFromDoubleDataPoint(name string, dp dataPointValuableDouble, attributes pdata.AttributeMap, additionalAttributes pdata.AttributeMap) string {
+func (f *prometheusFormatter) prometheusFromDoubleDataPoint(name string, dp pdata.DoubleDataPoint, attributes pdata.AttributeMap, additionalAttributes pdata.AttributeMap) string {
 	return f.prometheusDoubleOverwriteValue(
 		name,
 		dp.Value(),
@@ -182,7 +167,7 @@ func (f *prometheusFormatter) prometheusFromDoubleDataPoint(name string, dp data
 	)
 }
 
-func (f *prometheusFormatter) prometheusIntValue(name string, dp dataPointValuableInt, attributes pdata.AttributeMap, additionalAttributes pdata.AttributeMap) string {
+func (f *prometheusFormatter) prometheusIntValue(name string, dp pdata.IntDataPoint, attributes pdata.AttributeMap, additionalAttributes pdata.AttributeMap) string {
 	return f.prometheusIntLine(
 		name,
 		f.prometheusTagStringWithMerge(attributes, additionalAttributes, dp.LabelsMap()),
