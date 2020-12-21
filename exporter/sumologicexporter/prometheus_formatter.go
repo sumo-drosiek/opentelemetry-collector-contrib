@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"go.opentelemetry.io/collector/consumer/pdata"
 	tracetranslator "go.opentelemetry.io/collector/translator/trace"
@@ -102,7 +103,7 @@ func (f *prometheusFormatter) prometheusDoubleLine(name string, attributes strin
 		f.sanitizePrometheusKey(name),
 		attributes,
 		value,
-		timestamp/1e6,
+		timestamp/pdata.TimestampUnixNano(time.Millisecond),
 	)
 }
 
@@ -114,7 +115,7 @@ func (f *prometheusFormatter) prometheusIntLine(name string, attributes string, 
 		f.sanitizePrometheusKey(name),
 		attributes,
 		value,
-		timestamp/1e6,
+		timestamp/pdata.TimestampUnixNano(time.Millisecond),
 	)
 }
 
@@ -126,7 +127,7 @@ func (f *prometheusFormatter) prometheusUIntLine(name string, attributes string,
 		f.sanitizePrometheusKey(name),
 		attributes,
 		value,
-		timestamp/1e6,
+		timestamp/pdata.TimestampUnixNano(time.Millisecond),
 	)
 }
 
@@ -184,201 +185,261 @@ func (f *prometheusFormatter) prometheusCountMetric(name string) string {
 	return fmt.Sprintf("%s_count", name)
 }
 
+func (f *prometheusFormatter) intGauge2Strings(record metricPair) []string {
+	dps := record.metric.IntGauge().DataPoints()
+	noAttributes := pdata.NewAttributeMap()
+	lines := make([]string, 0, dps.Len())
+
+	for i := 0; i < dps.Len(); i++ {
+		dp := record.metric.IntGauge().DataPoints().At(i)
+		line := f.prometheusIntValue(
+			record.metric.Name(),
+			dp,
+			record.attributes,
+			noAttributes,
+		)
+		lines = append(lines, line)
+	}
+	return lines
+}
+
+func (f *prometheusFormatter) doubleGauge2Strings(record metricPair) []string {
+	dps := record.metric.DoubleGauge().DataPoints()
+	noAttributes := pdata.NewAttributeMap()
+	lines := make([]string, 0, dps.Len())
+
+	for i := 0; i < dps.Len(); i++ {
+		dp := dps.At(i)
+		line := f.prometheusFromDoubleDataPoint(
+			record.metric.Name(),
+			dp,
+			record.attributes,
+			noAttributes,
+		)
+		lines = append(lines, line)
+	}
+
+	return lines
+}
+
+func (f *prometheusFormatter) intSum2Strings(record metricPair) []string {
+	dps := record.metric.IntSum().DataPoints()
+	noAttributes := pdata.NewAttributeMap()
+	lines := make([]string, 0, dps.Len())
+
+	for i := 0; i < dps.Len(); i++ {
+		dp := dps.At(i)
+		line := f.prometheusIntValue(
+			record.metric.Name(),
+			dp,
+			record.attributes,
+			noAttributes,
+		)
+		lines = append(lines, line)
+	}
+
+	return lines
+}
+
+func (f *prometheusFormatter) doubleSum2Strings(record metricPair) []string {
+	dps := record.metric.DoubleSum().DataPoints()
+	noAttributes := pdata.NewAttributeMap()
+	lines := make([]string, 0, dps.Len())
+
+	for i := 0; i < dps.Len(); i++ {
+		dp := dps.At(i)
+		line := f.prometheusFromDoubleDataPoint(
+			record.metric.Name(),
+			dp,
+			record.attributes,
+			noAttributes,
+		)
+		lines = append(lines, line)
+	}
+
+	return lines
+}
+
+func (f *prometheusFormatter) doubleSummary2Strings(record metricPair) []string {
+	dps := record.metric.DoubleSummary().DataPoints()
+	noAttributes := pdata.NewAttributeMap()
+	var lines []string
+
+	for i := 0; i < dps.Len(); i++ {
+		dp := dps.At(i)
+		qs := dp.QuantileValues()
+		additionalAttributes := pdata.NewAttributeMap()
+		for i := 0; i < qs.Len(); i++ {
+			q := qs.At(i)
+			additionalAttributes.UpsertDouble("quantile", q.Quantile())
+
+			line := f.prometheusDoubleOverwriteValue(
+				record.metric.Name(),
+				q.Value(),
+				dp,
+				record.attributes,
+				additionalAttributes,
+			)
+			lines = append(lines, line)
+		}
+
+		line := f.prometheusDoubleOverwriteValue(
+			f.prometheusSumMetric(record.metric.Name()),
+			dp.Sum(),
+			dp,
+			record.attributes,
+			noAttributes,
+		)
+		lines = append(lines, line)
+
+		line = f.prometheusUIntOverwriteValue(
+			f.prometheusCountMetric(record.metric.Name()),
+			dp.Count(),
+			dp,
+			record.attributes,
+			noAttributes,
+		)
+		lines = append(lines, line)
+	}
+	return lines
+}
+
+func (f *prometheusFormatter) intHistogram2Strings(record metricPair) []string {
+	dps := record.metric.IntHistogram().DataPoints()
+	noAttributes := pdata.NewAttributeMap()
+	var lines []string
+
+	for i := 0; i < dps.Len(); i++ {
+		dp := dps.At(i)
+
+		explicitBounds := dp.ExplicitBounds()
+		var cumulative uint64
+		additionalAttributes := pdata.NewAttributeMap()
+
+		for i, bound := range explicitBounds {
+			cumulative += dp.BucketCounts()[i]
+			additionalAttributes.UpsertDouble("le", bound)
+
+			line := f.prometheusUIntOverwriteValue(
+				record.metric.Name(),
+				cumulative,
+				dp,
+				record.attributes,
+				additionalAttributes,
+			)
+			lines = append(lines, line)
+		}
+
+		cumulative += dp.BucketCounts()[len(explicitBounds)]
+		additionalAttributes.UpsertString("le", "+Inf")
+		line := f.prometheusUIntOverwriteValue(
+			record.metric.Name(),
+			cumulative,
+			dp,
+			record.attributes,
+			additionalAttributes,
+		)
+		lines = append(lines, line)
+
+		line = f.prometheusIntOverwriteValue(
+			f.prometheusSumMetric(record.metric.Name()),
+			dp.Sum(),
+			dp,
+			record.attributes,
+			noAttributes,
+		)
+		lines = append(lines, line)
+
+		line = f.prometheusUIntOverwriteValue(
+			f.prometheusCountMetric(record.metric.Name()),
+			dp.Count(),
+			dp,
+			record.attributes,
+			noAttributes,
+		)
+		lines = append(lines, line)
+	}
+
+	return lines
+}
+
+func (f *prometheusFormatter) doubleHistogram2Strings(record metricPair) []string {
+	dps := record.metric.DoubleHistogram().DataPoints()
+	noAttributes := pdata.NewAttributeMap()
+	var lines []string
+
+	for i := 0; i < dps.Len(); i++ {
+		dp := dps.At(i)
+
+		explicitBounds := dp.ExplicitBounds()
+		var cumulative uint64
+		additionalAttributes := pdata.NewAttributeMap()
+
+		for i, bound := range explicitBounds {
+			cumulative += dp.BucketCounts()[i]
+			additionalAttributes.UpsertDouble("le", bound)
+
+			line := f.prometheusUIntOverwriteValue(
+				record.metric.Name(),
+				cumulative,
+				dp,
+				record.attributes,
+				additionalAttributes,
+			)
+			lines = append(lines, line)
+		}
+
+		cumulative += dp.BucketCounts()[len(explicitBounds)]
+		additionalAttributes.UpsertString("le", "+Inf")
+		line := f.prometheusUIntOverwriteValue(
+			record.metric.Name(),
+			cumulative,
+			dp,
+			record.attributes,
+			additionalAttributes,
+		)
+		lines = append(lines, line)
+
+		line = f.prometheusDoubleOverwriteValue(
+			f.prometheusSumMetric(record.metric.Name()),
+			dp.Sum(),
+			dp,
+			record.attributes,
+			noAttributes,
+		)
+		lines = append(lines, line)
+
+		line = f.prometheusUIntOverwriteValue(
+			f.prometheusCountMetric(record.metric.Name()),
+			dp.Count(),
+			dp,
+			record.attributes,
+			noAttributes,
+		)
+		lines = append(lines, line)
+	}
+
+	return lines
+}
+
 func (f *prometheusFormatter) metric2Prometheus(record metricPair) (string, error) {
 	var nextLines []string
-	noAttributes := pdata.NewAttributeMap()
 
 	switch record.metric.DataType() {
 	case pdata.MetricDataTypeIntGauge:
-		dps := record.metric.IntGauge().DataPoints()
-		for i := 0; i < dps.Len(); i++ {
-			dp := record.metric.IntGauge().DataPoints().At(i)
-			line := f.prometheusIntValue(
-				record.metric.Name(),
-				dp,
-				record.attributes,
-				noAttributes,
-			)
-			nextLines = append(nextLines, line)
-		}
+		nextLines = f.intGauge2Strings(record)
 	case pdata.MetricDataTypeDoubleGauge:
-		dps := record.metric.DoubleGauge().DataPoints()
-		for i := 0; i < dps.Len(); i++ {
-			dp := dps.At(i)
-			line := f.prometheusFromDoubleDataPoint(
-				record.metric.Name(),
-				dp,
-				record.attributes,
-				noAttributes,
-			)
-			nextLines = append(nextLines, line)
-		}
+		nextLines = f.doubleGauge2Strings(record)
 	case pdata.MetricDataTypeIntSum:
-		dps := record.metric.IntSum().DataPoints()
-		for i := 0; i < dps.Len(); i++ {
-			dp := dps.At(i)
-			line := f.prometheusIntValue(
-				record.metric.Name(),
-				dp,
-				record.attributes,
-				noAttributes,
-			)
-			nextLines = append(nextLines, line)
-		}
+		nextLines = f.intSum2Strings(record)
 	case pdata.MetricDataTypeDoubleSum:
-		dps := record.metric.DoubleSum().DataPoints()
-		for i := 0; i < dps.Len(); i++ {
-			dp := dps.At(i)
-			line := f.prometheusFromDoubleDataPoint(
-				record.metric.Name(),
-				dp,
-				record.attributes,
-				noAttributes,
-			)
-			nextLines = append(nextLines, line)
-		}
+		nextLines = f.doubleSum2Strings(record)
 	case pdata.MetricDataTypeDoubleSummary:
-		dps := record.metric.DoubleSummary().DataPoints()
-		for i := 0; i < dps.Len(); i++ {
-			dp := dps.At(i)
-			qs := dp.QuantileValues()
-			additionalAttributes := pdata.NewAttributeMap()
-			for i := 0; i < qs.Len(); i++ {
-				q := qs.At(i)
-				additionalAttributes.UpsertDouble("quantile", q.Quantile())
-
-				line := f.prometheusDoubleOverwriteValue(
-					record.metric.Name(),
-					q.Value(),
-					dp,
-					record.attributes,
-					additionalAttributes,
-				)
-				nextLines = append(nextLines, line)
-			}
-
-			line := f.prometheusDoubleOverwriteValue(
-				f.prometheusSumMetric(record.metric.Name()),
-				dp.Sum(),
-				dp,
-				record.attributes,
-				noAttributes,
-			)
-			nextLines = append(nextLines, line)
-
-			line = f.prometheusUIntOverwriteValue(
-				f.prometheusCountMetric(record.metric.Name()),
-				dp.Count(),
-				dp,
-				record.attributes,
-				noAttributes,
-			)
-			nextLines = append(nextLines, line)
-		}
+		nextLines = f.doubleSummary2Strings(record)
 	case pdata.MetricDataTypeIntHistogram:
-		dps := record.metric.IntHistogram().DataPoints()
-		for i := 0; i < dps.Len(); i++ {
-			dp := dps.At(i)
-
-			explicitBounds := dp.ExplicitBounds()
-			var cumulative uint64
-			additionalAttributes := pdata.NewAttributeMap()
-
-			for i, bound := range explicitBounds {
-				cumulative += dp.BucketCounts()[i]
-				additionalAttributes.UpsertDouble("le", bound)
-
-				line := f.prometheusUIntOverwriteValue(
-					record.metric.Name(),
-					cumulative,
-					dp,
-					record.attributes,
-					additionalAttributes,
-				)
-				nextLines = append(nextLines, line)
-			}
-
-			cumulative += dp.BucketCounts()[len(explicitBounds)]
-			additionalAttributes.UpsertString("le", "+Inf")
-			line := f.prometheusUIntOverwriteValue(
-				record.metric.Name(),
-				cumulative,
-				dp,
-				record.attributes,
-				additionalAttributes,
-			)
-			nextLines = append(nextLines, line)
-
-			line = f.prometheusIntOverwriteValue(
-				f.prometheusSumMetric(record.metric.Name()),
-				dp.Sum(),
-				dp,
-				record.attributes,
-				noAttributes,
-			)
-			nextLines = append(nextLines, line)
-
-			line = f.prometheusUIntOverwriteValue(
-				f.prometheusCountMetric(record.metric.Name()),
-				dp.Count(),
-				dp,
-				record.attributes,
-				noAttributes,
-			)
-			nextLines = append(nextLines, line)
-		}
+		nextLines = f.intHistogram2Strings(record)
 	case pdata.MetricDataTypeDoubleHistogram:
-		dps := record.metric.DoubleHistogram().DataPoints()
-		for i := 0; i < dps.Len(); i++ {
-			dp := dps.At(i)
-
-			explicitBounds := dp.ExplicitBounds()
-			var cumulative uint64
-			additionalAttributes := pdata.NewAttributeMap()
-
-			for i, bound := range explicitBounds {
-				cumulative += dp.BucketCounts()[i]
-				additionalAttributes.UpsertDouble("le", bound)
-
-				line := f.prometheusUIntOverwriteValue(
-					record.metric.Name(),
-					cumulative,
-					dp,
-					record.attributes,
-					additionalAttributes,
-				)
-				nextLines = append(nextLines, line)
-			}
-
-			cumulative += dp.BucketCounts()[len(explicitBounds)]
-			additionalAttributes.UpsertString("le", "+Inf")
-			line := f.prometheusUIntOverwriteValue(
-				record.metric.Name(),
-				cumulative,
-				dp,
-				record.attributes,
-				additionalAttributes,
-			)
-			nextLines = append(nextLines, line)
-
-			line = f.prometheusDoubleOverwriteValue(
-				f.prometheusSumMetric(record.metric.Name()),
-				dp.Sum(),
-				dp,
-				record.attributes,
-				noAttributes,
-			)
-			nextLines = append(nextLines, line)
-
-			line = f.prometheusUIntOverwriteValue(
-				f.prometheusCountMetric(record.metric.Name()),
-				dp.Count(),
-				dp,
-				record.attributes,
-				noAttributes,
-			)
-			nextLines = append(nextLines, line)
-		}
+		nextLines = f.doubleHistogram2Strings(record)
 	}
 	return strings.Join(nextLines, "\n"), nil
 }
