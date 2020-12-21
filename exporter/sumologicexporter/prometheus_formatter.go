@@ -429,23 +429,23 @@ func (f *prometheusFormatter) doubleHistogram2Strings(record metricPair) []strin
 
 // metric2String returns stringified metricPair
 func (f *prometheusFormatter) metric2String(record metricPair) (string, error) {
-	var nextLines []string
+	var lines []string
 
 	switch record.metric.DataType() {
 	case pdata.MetricDataTypeIntGauge:
-		nextLines = f.intGauge2Strings(record)
+		lines = f.intGauge2Strings(record)
 	case pdata.MetricDataTypeDoubleGauge:
-		nextLines = f.doubleGauge2Strings(record)
+		lines = f.doubleGauge2Strings(record)
 	case pdata.MetricDataTypeIntSum:
-		nextLines = f.intSum2Strings(record)
+		lines = f.intSum2Strings(record)
 	case pdata.MetricDataTypeDoubleSum:
-		nextLines = f.doubleSum2Strings(record)
+		lines = f.doubleSum2Strings(record)
 	case pdata.MetricDataTypeDoubleSummary:
-		nextLines = f.doubleSummary2Strings(record)
+		lines = f.doubleSummary2Strings(record)
 	case pdata.MetricDataTypeIntHistogram:
-		nextLines = f.intHistogram2Strings(record)
+		lines = f.intHistogram2Strings(record)
 	case pdata.MetricDataTypeDoubleHistogram:
-		nextLines = f.doubleHistogram2Strings(record)
+		lines = f.doubleHistogram2Strings(record)
 	}
-	return strings.Join(nextLines, "\n"), nil
+	return strings.Join(lines, "\n"), nil
 }
