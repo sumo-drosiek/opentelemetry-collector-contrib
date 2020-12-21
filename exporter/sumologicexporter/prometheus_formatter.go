@@ -31,6 +31,7 @@ type dataPointCommon interface {
 
 type prometheusFormatter struct {
 	sanitNameRegex *regexp.Regexp
+	replacer       *strings.Replacer
 }
 
 type prometheusTags string
@@ -49,6 +50,7 @@ func newPrometheusFormatter() (prometheusFormatter, error) {
 
 	return prometheusFormatter{
 		sanitNameRegex: sanitNameRegex,
+		replacer:       strings.NewReplacer(`\`, `\\`, `"`, `\"`),
 	}, nil
 }
 
@@ -80,20 +82,18 @@ func (f *prometheusFormatter) tags2String(attr pdata.AttributeMap, labels pdata.
 	return prometheusTags(fmt.Sprintf("{%s}", strings.Join(returnValue, ",")))
 }
 
-// sanitizeKey returns sanitized key string
-// (all non-alphanumeric chars replaced with `_`)
+// sanitizeKey returns sanitized key string by replacing
+// all non-alphanumeric chars with `_`
 func (f *prometheusFormatter) sanitizeKey(s string) string {
 	return f.sanitNameRegex.ReplaceAllString(s, "_")
 }
 
-// sanitizeKey returns sanitized value string
+// sanitizeKey returns sanitized value string performing the following substitutions:
 // `/` -> `//`
 // `"` -> `\"`
 // `\n` -> `\n`
 func (f *prometheusFormatter) sanitizeValue(s string) string {
-	s = strings.ReplaceAll(s, `\`, `\\`)
-	s = strings.ReplaceAll(s, `"`, `\"`)
-	return strings.ReplaceAll(s, `\\n`, `\n`)
+	return strings.ReplaceAll(f.replacer.Replace(s), `\\n`, `\n`)
 }
 
 // doubleLine builds metric based on the given arguments where value is float64
@@ -219,7 +219,7 @@ func (f *prometheusFormatter) mergeAttributes(attributes pdata.AttributeMap, add
 	return mergedAttributes
 }
 
-// doubleGauge2Strings converts DoubleGauge record to list of strings (one per dataPoint)
+// doubleGauge2Strings converts DoubleGauge record to a list of strings (one per dataPoint)
 func (f *prometheusFormatter) doubleGauge2Strings(record metricPair) []string {
 	dps := record.metric.DoubleGauge().DataPoints()
 	lines := make([]string, 0, dps.Len())
@@ -237,7 +237,7 @@ func (f *prometheusFormatter) doubleGauge2Strings(record metricPair) []string {
 	return lines
 }
 
-// intSum2Strings converts IntSum record to list of strings (one per dataPoint)
+// intSum2Strings converts IntSum record to a list of strings (one per dataPoint)
 func (f *prometheusFormatter) intSum2Strings(record metricPair) []string {
 	dps := record.metric.IntSum().DataPoints()
 	lines := make([]string, 0, dps.Len())
@@ -255,7 +255,7 @@ func (f *prometheusFormatter) intSum2Strings(record metricPair) []string {
 	return lines
 }
 
-// doubleSum2Strings converts DoubleSum record to list of strings (one per dataPoint)
+// doubleSum2Strings converts DoubleSum record to a list of strings (one per dataPoint)
 func (f *prometheusFormatter) doubleSum2Strings(record metricPair) []string {
 	dps := record.metric.DoubleSum().DataPoints()
 	lines := make([]string, 0, dps.Len())
@@ -273,8 +273,8 @@ func (f *prometheusFormatter) doubleSum2Strings(record metricPair) []string {
 	return lines
 }
 
-// doubleSummary2Strings converts DoubleSummary record to list of strings
-// for each data points: one per quantile plus two for sum and count
+// doubleSummary2Strings converts DoubleSummary record to a list of strings
+// n+2 where n is number of quantiles and 2 stands for sum and count metrics per each data point
 func (f *prometheusFormatter) doubleSummary2Strings(record metricPair) []string {
 	dps := record.metric.DoubleSummary().DataPoints()
 	var lines []string
@@ -315,8 +315,8 @@ func (f *prometheusFormatter) doubleSummary2Strings(record metricPair) []string 
 	return lines
 }
 
-// intHistogram2Strings converts IntHistogram record to list of strings
-// for each data points: one per bound (with one for infinity) plus two for sum and count
+// intHistogram2Strings converts IntHistogram record to a list of strings,
+// (n+1) where n is number of bounds plus two for sum and count per each data point
 func (f *prometheusFormatter) intHistogram2Strings(record metricPair) []string {
 	dps := record.metric.IntHistogram().DataPoints()
 	var lines []string
@@ -371,8 +371,8 @@ func (f *prometheusFormatter) intHistogram2Strings(record metricPair) []string {
 	return lines
 }
 
-// doubleHistogram2Strings converts DoubleHistogram record to list of strings
-// for each data points: one per bound (with one for infinity) plus two for sum and count
+// doubleHistogram2Strings converts DoubleHistogram record to a list of strings,
+// (n+1) where n is number of bounds plus two for sum and count per each data point
 func (f *prometheusFormatter) doubleHistogram2Strings(record metricPair) []string {
 	dps := record.metric.DoubleHistogram().DataPoints()
 	var lines []string
