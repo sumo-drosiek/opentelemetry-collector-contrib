@@ -317,10 +317,12 @@ func TestSendLogsUnexpectedFormat(t *testing.T) {
 	})
 	defer func() { test.srv.Close() }()
 	test.s.config.LogFormat = "dummy"
-	test.s.logBuffer = exampleTwoLogs()
+	logs := exampleTwoLogs()
+	test.s.logBuffer = logs
 
-	_, err := test.s.sendLogs(context.Background(), fields{})
+	dropped, err := test.s.sendLogs(context.Background(), fields{})
 	assert.Error(t, err)
+	assert.Equal(t, logs, dropped)
 }
 
 func TestOverrideSourceName(t *testing.T) {
@@ -639,13 +641,14 @@ func TestSendMetricsUnexpectedFormat(t *testing.T) {
 	})
 	defer func() { test.srv.Close() }()
 	test.s.config.MetricFormat = "invalid"
-	test.s.metricBuffer = []metricPair{
+	metrics := []metricPair{
 		exampleIntMetric(),
-		exampleIntGaugeMetric(),
 	}
+	test.s.metricBuffer = metrics
 
-	_, err := test.s.sendMetrics(context.Background(), fields{})
-	assert.EqualError(t, err, "unexpected metric format")
+	dropped, err := test.s.sendMetrics(context.Background(), fields{})
+	assert.EqualError(t, err, "unexpected metric format: invalid")
+	assert.Equal(t, dropped, metrics)
 }
 
 func TestMetricsBuffer(t *testing.T) {
@@ -681,7 +684,7 @@ func TestMetricsBufferOverflow(t *testing.T) {
 
 	test.s.config.HTTPClientSettings.Endpoint = ":"
 	test.s.config.MetricFormat = PrometheusFormat
-	test.s.config.MaxRequestBodySize = 1024 * 1024 * 1024 *1024
+	test.s.config.MaxRequestBodySize = 1024 * 1024 * 1024 * 1024
 	metric := exampleIntMetric()
 
 	for test.s.countMetrics() < maxBufferSize-1 {
