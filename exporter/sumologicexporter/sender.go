@@ -236,23 +236,12 @@ func (s *sender) sendMetrics(ctx context.Context, flds fields) ([]metricPair, er
 
 	for _, record := range s.metricBuffer {
 		var formattedLine string
-		var err error
 
 		switch s.config.MetricFormat {
 		case PrometheusFormat:
 			formattedLine = s.prometheusFormatter.metric2String(record)
 		default:
 			return nil, errors.New("unexpected metric format")
-		}
-
-		if err != nil {
-			droppedRecords = append(droppedRecords, record)
-			errs = append(errs, err)
-			continue
-		}
-		if len(formattedLine) == 0 {
-			// Skip empty string
-			return nil, nil
 		}
 
 		ar, err := s.appendAndSend(ctx, formattedLine, MetricsPipeline, &body, flds)
