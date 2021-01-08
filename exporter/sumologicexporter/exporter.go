@@ -285,9 +285,9 @@ func (se *sumologicexporter) pushMetricsData(ctx context.Context, md pdata.Metri
 
 				// assign metadata
 				previousMetadata = currentMetadata
-
+				var dropped []metricPair
 				// add metric to the buffer
-				dropped, err := sdr.batchMetric(ctx, mp, currentMetadata)
+				dropped, err = sdr.batchMetric(ctx, mp, currentMetadata)
 				if err != nil {
 					droppedRecords = append(droppedRecords, dropped...)
 					errs = append(errs, err)
