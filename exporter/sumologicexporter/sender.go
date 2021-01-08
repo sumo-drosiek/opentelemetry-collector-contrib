@@ -235,6 +235,8 @@ func (s *sender) sendMetrics(ctx context.Context, flds fields) ([]metricPair, er
 		var err error
 
 		switch s.config.MetricFormat {
+		case PrometheusFormat:
+			formattedLine = s.prometheusFormatter.metric2String(record)
 		default:
 			return nil, errors.New("unexpected metric format")
 		}
