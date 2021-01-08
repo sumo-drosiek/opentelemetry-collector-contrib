@@ -346,3 +346,27 @@ func (s *sender) batchLog(ctx context.Context, log pdata.LogRecord, metadata fie
 func (s *sender) countLogs() int {
 	return len(s.logBuffer)
 }
+
+// cleanMetricBuffer zeroes metricBuffer
+func (s *sender) cleanMetricBuffer() {
+	s.metricBuffer = (s.metricBuffer)[:0]
+}
+
+// batchMetric adds metric to the metricBuffer and flushes them if metricBuffer is full to avoid overflow
+// returns list of metric records which were not sent successfully
+func (s *sender) batchMetric(ctx context.Context, metric metricPair, metadata fields) ([]metricPair, error) {
+	s.metricBuffer = append(s.metricBuffer, metric)
+
+	if s.countMetrics() >= maxBufferSize {
+		dropped, err := s.sendMetrics(ctx, metadata)
+		s.cleanMetricBuffer()
+		return dropped, err
+	}
+
+	return nil, nil
+}
+
+// countMetrics returns number of metrics in metricBuffer
+func (s *sender) countMetrics() int {
+	return len(s.metricBuffer)
+}
