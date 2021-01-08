@@ -42,12 +42,13 @@ type metricPair struct {
 }
 
 type sender struct {
-	logBuffer  []pdata.LogRecord
-	config     *Config
-	client     *http.Client
-	filter     filter
-	sources    sourceFormats
-	compressor compressor
+	logBuffer    []pdata.LogRecord
+	metricBuffer []metricPair
+	config       *Config
+	client       *http.Client
+	filter       filter
+	sources      sourceFormats
+	compressor   compressor
 }
 
 const (
@@ -207,6 +208,57 @@ func (s *sender) sendLogs(ctx context.Context, flds fields) ([]pdata.LogRecord, 
 	}
 
 	if err := s.send(ctx, LogsPipeline, strings.NewReader(body.String()), flds); err != nil {
+		errs = append(errs, err)
+		droppedRecords = append(droppedRecords, currentRecords...)
+	}
+
+	if len(errs) > 0 {
+		return droppedRecords, componenterror.CombineErrors(errs)
+	}
+	return droppedRecords, nil
+}
+
+// sendMetrics sends metrics in right format basing on the s.config.MetricFormat
+func (s *sender) sendMetrics(ctx context.Context, flds fields) ([]metricPair, error) {
+	var (
+		body           strings.Builder
+		errs           []error
+		droppedRecords []metricPair
+		currentRecords []metricPair
+	)
+
+	for _, record := range s.metricBuffer {
+		var formattedLine string
+
+		switch s.config.MetricFormat {
+		default:
+			return nil, errors.New("unexpected metric format")
+		}
+
+		ar, err := s.appendAndSend(ctx, formattedLine, MetricsPipeline, &body, flds)
+		if err != nil {
+			errs = append(errs, err)
+			if ar.sent {
+				droppedRecords = append(droppedRecords, currentRecords...)
+			}
+
+			if !ar.appended {
+				droppedRecords = append(droppedRecords, record)
+			}
+		}
+
+		// If data was sent, cleanup the currentTimeSeries counter
+		if ar.sent {
+			currentRecords = currentRecords[:0]
+		}
+
+		// If log has been appended to body, increment the currentTimeSeries
+		if ar.appended {
+			currentRecords = append(currentRecords, record)
+		}
+	}
+
+	if err := s.send(ctx, MetricsPipeline, strings.NewReader(body.String()), flds); err != nil {
 		errs = append(errs, err)
 		droppedRecords = append(droppedRecords, currentRecords...)
 	}
