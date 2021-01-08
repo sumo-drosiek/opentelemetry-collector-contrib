@@ -647,3 +647,49 @@ func TestSendMetricsUnexpectedFormat(t *testing.T) {
 	_, err := test.s.sendMetrics(context.Background(), fields{})
 	assert.EqualError(t, err, "unexpected metric format")
 }
+
+func TestMetricsBuffer(t *testing.T) {
+	test := prepareSenderTest(t, []func(w http.ResponseWriter, req *http.Request){})
+	defer func() { test.srv.Close() }()
+
+	assert.Equal(t, test.s.countMetrics(), 0)
+	metrics := []metricPair{
+		exampleIntMetric(),
+		exampleIntGaugeMetric(),
+	}
+
+	droppedMetrics, err := test.s.batchMetric(context.Background(), metrics[0], fields{})
+	require.NoError(t, err)
+	assert.Nil(t, droppedMetrics)
+	assert.Equal(t, 1, test.s.countMetrics())
+	assert.Equal(t, metrics[0:1], test.s.metricBuffer)
+
+	droppedMetrics, err = test.s.batchMetric(context.Background(), metrics[1], fields{})
+	require.NoError(t, err)
+	assert.Nil(t, droppedMetrics)
+	assert.Equal(t, 2, test.s.countMetrics())
+	assert.Equal(t, metrics, test.s.metricBuffer)
+
+	test.s.cleanMetricBuffer()
+	assert.Equal(t, 0, test.s.countMetrics())
+	assert.Equal(t, []metricPair{}, test.s.metricBuffer)
+}
+
+func TestMetricsBufferOverflow(t *testing.T) {
+	test := prepareSenderTest(t, []func(w http.ResponseWriter, req *http.Request){})
+	defer func() { test.srv.Close() }()
+
+	test.s.config.HTTPClientSettings.Endpoint = ":"
+	test.s.config.MetricFormat = PrometheusFormat
+	test.s.config.MaxRequestBodySize = 1024 * 1024 * 1024 *1024
+	metric := exampleIntMetric()
+
+	for test.s.countMetrics() < maxBufferSize-1 {
+		_, err := test.s.batchMetric(context.Background(), metric, fields{})
+		require.NoError(t, err)
+	}
+
+	_, err := test.s.batchMetric(context.Background(), metric, fields{})
+	assert.EqualError(t, err, `parse ":": missing protocol scheme`)
+	assert.Equal(t, 0, test.s.countMetrics())
+}
