@@ -66,6 +66,8 @@ require (
 // Replace references to modules that are in this repository with their relateive paths
 // so that we always build with current (latest) version of the source code.
 
+replace go.opentelemetry.io/collector v0.20.0 => github.com/sumo-drosiek/opentelemetry-collector v0.20.1-0.20210215163351-64acac5eccba
+
 replace github.com/open-telemetry/opentelemetry-collector-contrib/internal/common => ./internal/common
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/internal/splunk => ./internal/splunk
