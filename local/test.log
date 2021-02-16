@@ -1,0 +1,5 @@
+2021-02-15T11:20:02.488715464Z stderr F [2021/02/15 11:20:02] [ warn] [This is example application log]
+2021-02-15T11:20:03.494418153Z stderr F [2021/02/15 11:20:03] [ info] [This is another application log]
+2021-02-15T11:20:04.494278153Z stderr P [2021/02/15 11:20:03] [ info] [This is multiline log]
+2021-02-15T11:20:05.812371238Z stderr P Second line of multiline log
+2021-02-15T11:20:06.128371139Z stderr F Third line of multiline log

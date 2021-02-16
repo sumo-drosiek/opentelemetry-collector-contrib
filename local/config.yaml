@@ -1,0 +1,29 @@
+receivers:
+  filelog:
+    operators:
+      - type: file_input
+        include: [ local/test.log ]
+        start_at: beginning
+      - type: regex_parser
+        regex: '^(?P<time>[^ ]+) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) (?P<msg>.*)$'
+        timestamp:
+          parse_from: time
+          layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+      - type: recombine
+        combine_field: msg
+        is_last_entry: "$.logtag == 'F'"
+      - type: metadata
+        labels:
+          stream: 'EXPR($.stream)'
+      - type: restructure
+        ops:
+          - remove: logtag
+          - remove: stream
+exporters:
+  logging:
+    loglevel: debug
+service:
+  pipelines:
+    logs:
+      receivers: [filelog]
+      exporters: [logging]
