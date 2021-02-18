@@ -126,6 +126,40 @@ func exampleTwoDifferentLogs() []pdata.LogRecord {
 	return buffer
 }
 
+func exampleMultitypeLogs() []pdata.LogRecord {
+	buffer := make([]pdata.LogRecord, 2)
+
+	attVal := pdata.NewAttributeValueMap()
+	attMap := attVal.MapVal()
+	attMap.InitEmptyWithCapacity(2)
+	attMap.InsertString("lk1", "lv1")
+	attMap.InsertInt("lk2", 13)
+
+	buffer[0] = pdata.NewLogRecord()
+	attVal.CopyTo(buffer[0].Body())
+
+	buffer[0].Attributes().InsertString("key1", "value1")
+	buffer[0].Attributes().InsertString("key2", "value2")
+
+	buffer[1] = pdata.NewLogRecord()
+
+	attVal = pdata.NewAttributeValueArray()
+	attArr := attVal.ArrayVal()
+	strVal := pdata.NewAttributeValueNull()
+	strVal.SetStringVal("lv2")
+	intVal := pdata.NewAttributeValueNull()
+	intVal.SetIntVal(13)
+
+	attArr.Append(strVal)
+	attArr.Append(intVal)
+
+	attVal.CopyTo(buffer[1].Body())
+	buffer[1].Attributes().InsertString("key1", "value1")
+	buffer[1].Attributes().InsertString("key2", "value2")
+
+	return buffer
+}
+
 func TestSend(t *testing.T) {
 	test := prepareSenderTest(t, []func(w http.ResponseWriter, req *http.Request){
 		func(w http.ResponseWriter, req *http.Request) {
@@ -139,6 +173,26 @@ func TestSend(t *testing.T) {
 	defer func() { test.srv.Close() }()
 
 	test.s.buffer = exampleTwoLogs()
+
+	_, err := test.s.sendLogs(context.Background(), fields{"key1": "value", "key2": "value2"})
+	assert.NoError(t, err)
+}
+
+func TestSendMultitype(t *testing.T) {
+	test := prepareSenderTest(t, []func(w http.ResponseWriter, req *http.Request){
+		func(w http.ResponseWriter, req *http.Request) {
+			body := extractBody(t, req)
+			expected := `{"lk1":"lv1","lk2":13}
+["lv2",13]`
+			assert.Equal(t, expected, body)
+			assert.Equal(t, "key1=value, key2=value2", req.Header.Get("X-Sumo-Fields"))
+			assert.Equal(t, "otelcol", req.Header.Get("X-Sumo-Client"))
+			assert.Equal(t, "application/x-www-form-urlencoded", req.Header.Get("Content-Type"))
+		},
+	})
+	defer func() { test.srv.Close() }()
+
+	test.s.buffer = exampleMultitypeLogs()
 
 	_, err := test.s.sendLogs(context.Background(), fields{"key1": "value", "key2": "value2"})
 	assert.NoError(t, err)
@@ -229,6 +283,26 @@ func TestSendJson(t *testing.T) {
 	defer func() { test.srv.Close() }()
 	test.s.config.LogFormat = JSONFormat
 	test.s.buffer = exampleTwoLogs()
+
+	_, err := test.s.sendLogs(context.Background(), fields{"key": "value"})
+	assert.NoError(t, err)
+}
+
+func TestSendJsonMultitype(t *testing.T) {
+	test := prepareSenderTest(t, []func(w http.ResponseWriter, req *http.Request){
+		func(w http.ResponseWriter, req *http.Request) {
+			body := extractBody(t, req)
+			expected := `{"key1":"value1","key2":"value2","log":{"lk1":"lv1","lk2":13}}
+{"key1":"value1","key2":"value2","log":["lv2",13]}`
+			assert.Equal(t, expected, body)
+			assert.Equal(t, "key=value", req.Header.Get("X-Sumo-Fields"))
+			assert.Equal(t, "otelcol", req.Header.Get("X-Sumo-Client"))
+			assert.Equal(t, "application/x-www-form-urlencoded", req.Header.Get("Content-Type"))
+		},
+	})
+	defer func() { test.srv.Close() }()
+	test.s.config.LogFormat = JSONFormat
+	test.s.buffer = exampleMultitypeLogs()
 
 	_, err := test.s.sendLogs(context.Background(), fields{"key": "value"})
 	assert.NoError(t, err)
