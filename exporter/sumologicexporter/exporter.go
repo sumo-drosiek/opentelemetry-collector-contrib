@@ -113,8 +113,8 @@ func newLogsExporter(
 // so they can be handled by OTC retry mechanism
 func (se *sumologicexporter) pushLogsData(ctx context.Context, ld pdata.Logs) (int, error) {
 	var (
-		currentMetadata  fields
-		previousMetadata fields
+		currentMetadata  fields = newFields()
+		previousMetadata fields = newFields()
 		errs             []error
 		droppedRecords   []pdata.LogRecord
 		err              error
