@@ -679,12 +679,11 @@ func TestMetricsBuffer(t *testing.T) {
 }
 
 func TestMetricsBufferOverflow(t *testing.T) {
-	t.Skip("Skip test due to prometheus format complexity. Execution can take over 30s")
 	test := prepareSenderTest(t, []func(w http.ResponseWriter, req *http.Request){})
 	defer func() { test.srv.Close() }()
 
 	test.s.config.HTTPClientSettings.Endpoint = ":"
-	test.s.config.MetricFormat = PrometheusFormat
+	test.s.config.MetricFormat = Carbon2Format
 	test.s.config.MaxRequestBodySize = 1024 * 1024 * 1024 * 1024
 	metric := exampleIntMetric()
 
@@ -717,7 +716,7 @@ foo=bar metric=gauge_metric_name  245 1608124662`
 		exampleIntMetric(),
 		exampleIntGaugeMetric(),
 	}
-	
+
 	test.s.metricBuffer[0].attributes.InsertString("unit", "m/s")
 	test.s.metricBuffer[0].attributes.InsertBool("metric", true)
 
