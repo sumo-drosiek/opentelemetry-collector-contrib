@@ -40,6 +40,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/signalfxexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/splunkhecexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/stackdriverexporter"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/statsexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/sumologicexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/httpforwarder"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/hostobserver"
@@ -153,6 +154,7 @@ func components() (component.Factories, error) {
 		signalfxexporter.NewFactory(),
 		splunkhecexporter.NewFactory(),
 		stackdriverexporter.NewFactory(),
+		statsexporter.NewFactory(),
 		sumologicexporter.NewFactory(),
 	}
 	for _, exp := range factories.Exporters {

@@ -1,5 +1,6 @@
 FROM alpine:latest as certs
 RUN apk --update add ca-certificates
+RUN apk --update add journalctl
 
 FROM scratch
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt

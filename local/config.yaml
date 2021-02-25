@@ -1,50 +1,50 @@
 receivers:
   filelog:
-    include: [ local/pods/*/*/*.log ]
+    include: [ local/containerd-1gb/*/*/*.log ]
     start_at: beginning
     include_file_path: true
     include_file_name: false
     operators:
-      # FInd out which format is used by kubernetes
-      - type: regex_parser
-        id: get-format
-        regex: '^((?P<docker_format>\{)|(?P<crio_format>[^ Z]+) |(?P<containerd_format>[^ ^Z]+Z) )'
-        preserve_to: original
-      # Parse CRI-O format
-      - type: regex_parser
-        id: parser-crio
-        if: '$$record.crio_format != ""'
-        parse_from: original
-        regex: '^(?P<time>[^ Z]+) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) (?P<log>.*)$'
-        timestamp:
-          parse_from: time
-          layout_type: gotime
-          layout: '2006-01-02T15:04:05.000000000-07:00'
+      # # Find out which format is used by kubernetes
+      # - type: regex_parser
+      #   id: get-format
+      #   regex: '^((?P<docker_format>\{)|(?P<crio_format>[^ Z]+) |(?P<containerd_format>[^ ^Z]+Z) )'
+      #   preserve_to: original
+      # # Parse CRI-O format
+      # - type: regex_parser
+      #   id: parser-crio
+      #   if: '$$record.crio_format != ""'
+      #   parse_from: original
+      #   regex: '^(?P<time>[^ Z]+) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) (?P<log>.*)$'
+      #   timestamp:
+      #     parse_from: time
+      #     layout_type: gotime
+      #     layout: '2006-01-02T15:04:05.000000000-07:00'
       # Parse CRI-Containerd format
       - type: regex_parser
         id: parser-containerd
-        if: '$$record.containerd_format != ""'
-        parse_from: original
+        # if: '$$record.containerd_format != ""'
+        # parse_from: original
         regex: '^(?P<time>[^ ^Z]+Z) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) (?P<log>.*)$'
         timestamp:
           parse_from: time
           layout: '%Y-%m-%dT%H:%M:%S.%LZ'
-      # Parse Docker format
-      - type: json_parser
-        id: parser-docker
-        if: '$$record.docker_format != ""'
-        parse_from: original
-        timestamp:
-          parse_from: time
-          layout: '%Y-%m-%dT%H:%M:%S.%LZ'
-      # Clean up format detection
-      - type: restructure
-        id: clean-up-format-detection
-        ops:
-          - remove: original
-          - remove: docker_format
-          - remove: crio_format
-          - remove: containerd_format
+      # # Parse Docker format
+      # - type: json_parser
+      #   id: parser-docker
+      #   if: '$$record.docker_format != ""'
+      #   parse_from: original
+      #   timestamp:
+      #     parse_from: time
+      #     layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+      # # Clean up format detection
+      # - type: restructure
+      #   id: clean-up-format-detection
+      #   ops:
+      #     - remove: original
+      #     - remove: docker_format
+      #     - remove: crio_format
+      #     - remove: containerd_format
       # Extract metadata from file path
       - type: regex_parser
         id: extract_metadata_from_filepath
@@ -124,11 +124,19 @@ receivers:
           ($$record._SYSTEMD_UNIT != "update-ca-certificates.service") &&
           ($$record._SYSTEMD_UNIT != "user-cloudinit.service") &&
           ($$record._SYSTEMD_UNIT != "var-lib-etcd2.service")
+processors:
+  batch:
 exporters:
   logging:
     loglevel: debug
+  sumologic:
+    endpoint: 'http://localhost:3000'
+  stats:
 service:
   pipelines:
     logs:
-      receivers: [filelog, journald]
-      exporters: [logging]
+      receivers: [filelog]
+      processors: [batch]
+      exporters: [stats]
+    # metrics:...
+    # traces:...
