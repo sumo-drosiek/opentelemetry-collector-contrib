@@ -23,8 +23,8 @@ import (
 	"go.opentelemetry.io/collector/testbed/testbed"
 	scenarios "go.opentelemetry.io/collector/testbed/tests"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/testbed/datareceivers"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/testbed/datasenders"
+	// "github.com/open-telemetry/opentelemetry-collector-contrib/testbed/datareceivers"
+	// "github.com/open-telemetry/opentelemetry-collector-contrib/testbed/datasenders"
 )
 
 var contribPerfResultsSummary testbed.TestResultsSummary = &testbed.PerformanceResults{}
@@ -42,24 +42,24 @@ func TestTrace10kSPS(t *testing.T) {
 		receiver     testbed.DataReceiver
 		resourceSpec testbed.ResourceSpec
 	}{
-		{
-			"OTLP",
-			testbed.NewOTLPTraceDataSender(testbed.DefaultHost, testbed.GetAvailablePort(t)),
-			testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
-			testbed.ResourceSpec{
-				ExpectedMaxCPU: 20,
-				ExpectedMaxRAM: 71,
-			},
-		},
-		{
-			"SAPM",
-			datasenders.NewSapmDataSender(testbed.GetAvailablePort(t)),
-			datareceivers.NewSapmDataReceiver(testbed.GetAvailablePort(t)),
-			testbed.ResourceSpec{
-				ExpectedMaxCPU: 40,
-				ExpectedMaxRAM: 85,
-			},
-		},
+		// {
+		// 	"OTLP",
+		// 	testbed.NewOTLPTraceDataSender(testbed.DefaultHost, testbed.GetAvailablePort(t)),
+		// 	testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
+		// 	testbed.ResourceSpec{
+		// 		ExpectedMaxCPU: 20,
+		// 		ExpectedMaxRAM: 71,
+		// 	},
+		// },
+		// {
+		// 	"SAPM",
+		// 	datasenders.NewSapmDataSender(testbed.GetAvailablePort(t)),
+		// 	datareceivers.NewSapmDataReceiver(testbed.GetAvailablePort(t)),
+		// 	testbed.ResourceSpec{
+		// 		ExpectedMaxCPU: 40,
+		// 		ExpectedMaxRAM: 85,
+		// 	},
+		// },
 	}
 
 	processors := map[string]string{

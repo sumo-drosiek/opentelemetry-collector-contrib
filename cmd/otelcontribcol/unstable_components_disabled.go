@@ -18,9 +18,14 @@ package main
 
 import (
 	"go.opentelemetry.io/collector/component"
+
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/journaldreceiver"
 )
 
 func extraReceivers() []component.ReceiverFactory {
-	// Disable all unstable components.
-	return nil
+	return []component.ReceiverFactory{
+		filelogreceiver.NewFactory(),
+		journaldreceiver.NewFactory(),
+	}
 }

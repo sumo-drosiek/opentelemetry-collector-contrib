@@ -70,7 +70,7 @@ require (
 // Replace references to modules that are in this repository with their relateive paths
 // so that we always build with current (latest) version of the source code.
 
-replace go.opentelemetry.io/collector v0.20.1-0.20210218001603-48151d869607 => github.com/sumo-drosiek/opentelemetry-collector v0.20.1-0.20210219094804-767f0d3cce58
+replace go.opentelemetry.io/collector v0.20.1-0.20210222012639-f480d17e10a7 => github.com/sumo-drosiek/opentelemetry-collector v0.20.1-0.20210301140321-1bcad95ecef5
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/internal/common => ./internal/common
 

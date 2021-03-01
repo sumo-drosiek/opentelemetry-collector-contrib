@@ -15,6 +15,8 @@ require (
 	go.uber.org/zap v1.16.0
 )
 
+replace go.opentelemetry.io/collector v0.20.1-0.20210222012639-f480d17e10a7 => github.com/sumo-drosiek/opentelemetry-collector v0.20.1-0.20210301140321-1bcad95ecef5
+
 replace github.com/open-telemetry/opentelemetry-collector-contrib/exporter/carbonexporter => ../exporter/carbonexporter
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/exporter/sapmexporter => ../exporter/sapmexporter

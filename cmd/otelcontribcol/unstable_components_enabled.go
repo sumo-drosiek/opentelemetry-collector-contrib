@@ -20,10 +20,12 @@ import (
 	"go.opentelemetry.io/collector/component"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/journaldreceiver"
 )
 
 func extraReceivers() []component.ReceiverFactory {
 	return []component.ReceiverFactory{
 		filelogreceiver.NewFactory(),
+		journaldreceiver.NewFactory(),
 	}
 }

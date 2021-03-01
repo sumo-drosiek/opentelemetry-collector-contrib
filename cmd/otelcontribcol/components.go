@@ -58,9 +58,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/carbonreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/collectdreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/dockerstatsreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jmxreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/journaldreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusexecreceiver"
@@ -118,8 +116,6 @@ func components() (component.Factories, error) {
 		wavefrontreceiver.NewFactory(),
 		windowsperfcountersreceiver.NewFactory(),
 		zookeeperreceiver.NewFactory(),
-		filelogreceiver.NewFactory(),
-		journaldreceiver.NewFactory(),
 	}
 
 	receivers = append(receivers, extraReceivers()...)

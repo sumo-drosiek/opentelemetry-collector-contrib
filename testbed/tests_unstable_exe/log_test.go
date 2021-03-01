@@ -35,6 +35,100 @@ func TestMain(m *testing.M) {
 	testbed.DoTestMain(m, contribPerfResultsSummary)
 }
 
+func TestLogMaxDPS(t *testing.T) {
+	tests := []struct {
+		name         string
+		sender       testbed.DataSender
+		receiver     testbed.DataReceiver
+		resourceSpec testbed.ResourceSpec
+		extensions   map[string]string
+	}{
+		{
+			name:     "OTLP",
+			sender:   testbed.NewOTLPLogsDataSender(testbed.DefaultHost, testbed.GetAvailablePort(t)),
+			receiver: testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
+			resourceSpec: testbed.ResourceSpec{
+				ExpectedMaxCPU: 200,
+				ExpectedMaxRAM: 300,
+			},
+		},
+		{
+			name:     "filelog",
+			sender:   datasenders.NewFileLogWriter(),
+			receiver: testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
+			resourceSpec: testbed.ResourceSpec{
+				ExpectedMaxCPU: 200,
+				ExpectedMaxRAM: 300,
+			},
+		},
+		{
+			name:     "k8d containerd",
+			sender:   datasenders.NewFileLogContainerdWriter(),
+			receiver: testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
+			resourceSpec: testbed.ResourceSpec{
+				ExpectedMaxCPU: 200,
+				ExpectedMaxRAM: 300,
+			},
+		},
+		{
+			name:     "k8s auto detection",
+			sender:   datasenders.NewFileLogK8sAutoDetectionWriter(),
+			receiver: testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
+			resourceSpec: testbed.ResourceSpec{
+				ExpectedMaxCPU: 200,
+				ExpectedMaxRAM: 300,
+			},
+		},
+		{
+			name:     "k8s auto detection routed",
+			sender:   datasenders.NewFileLogK8sAutoDetectionRoutedWriter(),
+			receiver: testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
+			resourceSpec: testbed.ResourceSpec{
+				ExpectedMaxCPU: 200,
+				ExpectedMaxRAM: 300,
+			},
+		},
+		{
+			name:     "k8s auto routed only",
+			sender:   datasenders.NewFileLogK8sAutoDetectionRoutedOnlyWriter(),
+			receiver: testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
+			resourceSpec: testbed.ResourceSpec{
+				ExpectedMaxCPU: 200,
+				ExpectedMaxRAM: 300,
+			},
+		},
+		{
+			name:     "k8s auto routed filepath only",
+			sender:   datasenders.NewFileLogK8sAutoDetectionRoutedFilePathWriter(),
+			receiver: testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
+			resourceSpec: testbed.ResourceSpec{
+				ExpectedMaxCPU: 200,
+				ExpectedMaxRAM: 300,
+			},
+		},
+	}
+
+	processors := map[string]string{
+		"batch": `
+  batch:
+`,
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			scenarios.ScenarioMaxItemsPerSecond(
+				t,
+				test.sender,
+				test.receiver,
+				test.resourceSpec,
+				contribPerfResultsSummary,
+				processors,
+				test.extensions,
+			)
+		})
+	}
+}
+
 func TestLog10kDPS(t *testing.T) {
 	tests := []struct {
 		name         string
@@ -48,8 +142,8 @@ func TestLog10kDPS(t *testing.T) {
 			sender:   testbed.NewOTLPLogsDataSender(testbed.DefaultHost, testbed.GetAvailablePort(t)),
 			receiver: testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
 			resourceSpec: testbed.ResourceSpec{
-				ExpectedMaxCPU: 20,
-				ExpectedMaxRAM: 80,
+				ExpectedMaxCPU: 200,
+				ExpectedMaxRAM: 300,
 			},
 		},
 		{
@@ -57,8 +151,53 @@ func TestLog10kDPS(t *testing.T) {
 			sender:   datasenders.NewFileLogWriter(),
 			receiver: testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
 			resourceSpec: testbed.ResourceSpec{
-				ExpectedMaxCPU: 50,
-				ExpectedMaxRAM: 150,
+				ExpectedMaxCPU: 200,
+				ExpectedMaxRAM: 300,
+			},
+		},
+		{
+			name:     "k8d containerd",
+			sender:   datasenders.NewFileLogContainerdWriter(),
+			receiver: testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
+			resourceSpec: testbed.ResourceSpec{
+				ExpectedMaxCPU: 200,
+				ExpectedMaxRAM: 300,
+			},
+		},
+		{
+			name:     "k8s auto detection",
+			sender:   datasenders.NewFileLogK8sAutoDetectionWriter(),
+			receiver: testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
+			resourceSpec: testbed.ResourceSpec{
+				ExpectedMaxCPU: 200,
+				ExpectedMaxRAM: 300,
+			},
+		},
+		{
+			name:     "k8s auto detection routed",
+			sender:   datasenders.NewFileLogK8sAutoDetectionRoutedWriter(),
+			receiver: testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
+			resourceSpec: testbed.ResourceSpec{
+				ExpectedMaxCPU: 200,
+				ExpectedMaxRAM: 300,
+			},
+		},
+		{
+			name:     "k8s auto routed only",
+			sender:   datasenders.NewFileLogK8sAutoDetectionRoutedOnlyWriter(),
+			receiver: testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
+			resourceSpec: testbed.ResourceSpec{
+				ExpectedMaxCPU: 200,
+				ExpectedMaxRAM: 300,
+			},
+		},
+		{
+			name:     "k8s auto routed filepath only",
+			sender:   datasenders.NewFileLogK8sAutoDetectionRoutedFilePathWriter(),
+			receiver: testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
+			resourceSpec: testbed.ResourceSpec{
+				ExpectedMaxCPU: 200,
+				ExpectedMaxRAM: 300,
 			},
 		},
 	}

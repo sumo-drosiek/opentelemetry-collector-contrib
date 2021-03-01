@@ -20,8 +20,8 @@ import (
 	"go.opentelemetry.io/collector/testbed/testbed"
 	scenarios "go.opentelemetry.io/collector/testbed/tests"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/testbed/datareceivers"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/testbed/datasenders"
+	// "github.com/open-telemetry/opentelemetry-collector-contrib/testbed/datareceivers"
+	// "github.com/open-telemetry/opentelemetry-collector-contrib/testbed/datasenders"
 )
 
 func TestMetric10kDPS(t *testing.T) {
@@ -31,33 +31,33 @@ func TestMetric10kDPS(t *testing.T) {
 		receiver     testbed.DataReceiver
 		resourceSpec testbed.ResourceSpec
 	}{
-		{
-			"OTLP",
-			testbed.NewOTLPMetricDataSender(testbed.DefaultHost, testbed.GetAvailablePort(t)),
-			testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
-			testbed.ResourceSpec{
-				ExpectedMaxCPU: 50,
-				ExpectedMaxRAM: 80,
-			},
-		},
-		{
-			"Carbon",
-			datasenders.NewCarbonDataSender(testbed.GetAvailablePort(t)),
-			datareceivers.NewCarbonDataReceiver(testbed.GetAvailablePort(t)),
-			testbed.ResourceSpec{
-				ExpectedMaxCPU: 237,
-				ExpectedMaxRAM: 90,
-			},
-		},
-		{
-			"SignalFx",
-			datasenders.NewSFxMetricDataSender(testbed.GetAvailablePort(t)),
-			datareceivers.NewSFxMetricsDataReceiver(testbed.GetAvailablePort(t)),
-			testbed.ResourceSpec{
-				ExpectedMaxCPU: 120,
-				ExpectedMaxRAM: 91,
-			},
-		},
+		// {
+		// 	"OTLP",
+		// 	testbed.NewOTLPMetricDataSender(testbed.DefaultHost, testbed.GetAvailablePort(t)),
+		// 	testbed.NewOTLPDataReceiver(testbed.GetAvailablePort(t)),
+		// 	testbed.ResourceSpec{
+		// 		ExpectedMaxCPU: 50,
+		// 		ExpectedMaxRAM: 80,
+		// 	},
+		// },
+		// {
+		// 	"Carbon",
+		// 	datasenders.NewCarbonDataSender(testbed.GetAvailablePort(t)),
+		// 	datareceivers.NewCarbonDataReceiver(testbed.GetAvailablePort(t)),
+		// 	testbed.ResourceSpec{
+		// 		ExpectedMaxCPU: 237,
+		// 		ExpectedMaxRAM: 90,
+		// 	},
+		// },
+		// {
+		// 	"SignalFx",
+		// 	datasenders.NewSFxMetricDataSender(testbed.GetAvailablePort(t)),
+		// 	datareceivers.NewSFxMetricsDataReceiver(testbed.GetAvailablePort(t)),
+		// 	testbed.ResourceSpec{
+		// 		ExpectedMaxCPU: 120,
+		// 		ExpectedMaxRAM: 91,
+		// 	},
+		// },
 	}
 
 	for _, test := range tests {

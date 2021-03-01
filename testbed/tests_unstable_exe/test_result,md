@@ -1,0 +1,12 @@
+Test                                    |Result|Duration|CPU Avg%|CPU Max%|RAM Avg MiB|RAM Max MiB|Sent Items|Received Items|Received Items/s|
+----------------------------------------|------|-------:|-------:|-------:|----------:|----------:|---------:|-------------:|---------------:|
+LogMaxDPS/OTLP                          |PASS  |     15s|   134.1|   134.3|         81|         89|   3225400|       3225400|          215026|
+LogMaxDPS/filelog                       |FAIL  |     26s|   177.3|   182.7|         75|         86|   4152500|       3373783|          129760|
+LogMaxDPS/k8d_containerd                |FAIL  |     26s|   181.5|   185.3|         78|         88|   3910400|       2981339|          114666|
+LogMaxDPS/k8s_auto_detection            |FAIL  |     26s|   163.0|   168.7|         83|         97|   3952700|        875462|           33671|
+LogMaxDPS/k8s_auto_detection_routed     |FAIL  |     26s|   157.3|   166.0|         84|         99|   3944500|        929169|           35737|
+Log10kDPS/OTLP                          |PASS  |     16s|    16.0|    18.7|         59|         73|    149900|        149900|                |
+Log10kDPS/filelog                       |PASS  |     15s|    17.1|    18.0|         61|         75|    150000|        150000|                |
+Log10kDPS/k8d_containerd                |PASS  |     15s|    19.3|    20.0|         61|         74|    150000|        150000|                |
+Log10kDPS/k8s_auto_detection            |PASS  |     15s|    46.5|    49.3|         66|         80|    150000|        150000|                |
+Log10kDPS/k8s_auto_detection_routed     |PASS  |     15s|    46.7|    47.7|         64|         78|    149900|        149900|                |
