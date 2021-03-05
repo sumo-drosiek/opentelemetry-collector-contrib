@@ -20,4 +20,9 @@ import (
 	_ "github.com/open-telemetry/opentelemetry-log-collection/operator/builtin/parser/regex"
 	_ "github.com/open-telemetry/opentelemetry-log-collection/operator/builtin/parser/severity"
 	_ "github.com/open-telemetry/opentelemetry-log-collection/operator/builtin/parser/time"
+
+	// Register transformers for stanza-based log receivers
+	_ "github.com/open-telemetry/opentelemetry-log-collection/operator/builtin/transformer/metadata"
+	_ "github.com/open-telemetry/opentelemetry-log-collection/operator/builtin/transformer/restructure"
+	_ "github.com/open-telemetry/opentelemetry-log-collection/operator/builtin/transformer/router"
 )
