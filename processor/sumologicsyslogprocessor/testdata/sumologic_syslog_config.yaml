@@ -1,0 +1,16 @@
+receivers:
+  nop:
+
+exporters:
+  nop:
+
+processors:
+  sumologic_syslog:
+    facility_attr: testAttrName
+
+service:
+  pipelines:
+    traces:
+      receivers: [nop]
+      processors: [sumologic_syslog]
+      exporters: [nop]
