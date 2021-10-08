@@ -106,7 +106,7 @@ func createLogProcessor(
 	if err != nil {
 		return nil, err
 	}
-	exclude, err := filterlog.NewMatcher(oCfg.Exclude)
+	exclude, err := filterlog.NewClassicMatcher(oCfg.Exclude)
 	if err != nil {
 		return nil, err
 	}
