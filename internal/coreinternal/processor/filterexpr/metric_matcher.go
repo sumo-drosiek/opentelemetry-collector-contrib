@@ -108,14 +108,14 @@ func (m *MetricMatcher) matchEnv(metricName string, attributes pdata.AttributeMa
 	return m.match(createMetricEnv(metricName, attributes))
 }
 
-func createMetricEnv(metricName string, attributes pdata.AttributeMap) metricEnv {
-	return metricEnv{
+func createMetricEnv(metricName string, attributes pdata.AttributeMap) *metricEnv {
+	return &metricEnv{
 		MetricName: metricName,
 		attributes: attributes,
 	}
 }
 
-func (m *MetricMatcher) match(env metricEnv) (bool, error) {
+func (m *MetricMatcher) match(env *metricEnv) (bool, error) {
 	result, err := m.v.Run(m.program, env)
 	if err != nil {
 		return false, err

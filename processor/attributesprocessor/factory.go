@@ -102,7 +102,7 @@ func createLogProcessor(
 		set.Logger.Warn("log_names setting is deprecated and will be removed soon")
 	}
 
-	include, err := filterlog.NewMatcher(oCfg.Include)
+	include, err := filterlog.NewClassicMatcher(oCfg.Include)
 	if err != nil {
 		return nil, err
 	}

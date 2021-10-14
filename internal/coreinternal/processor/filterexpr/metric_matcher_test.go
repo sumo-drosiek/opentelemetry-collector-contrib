@@ -30,7 +30,7 @@ func TestMetricCompileExprError(t *testing.T) {
 func TestMetricRunExprError(t *testing.T) {
 	matcher, err := NewMetricMatcher("foo")
 	require.NoError(t, err)
-	matched, _ := matcher.match(metricEnv{})
+	matched, _ := matcher.match(&metricEnv{})
 	require.False(t, matched)
 }
 
