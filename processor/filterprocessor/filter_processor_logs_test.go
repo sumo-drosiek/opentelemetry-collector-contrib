@@ -43,6 +43,7 @@ type logWithResource struct {
 	logNames           []string
 	resourceAttributes map[string]interface{}
 	recordAttributes   map[string]interface{}
+	body               *pcommon.Value
 }
 
 var (
@@ -335,6 +336,64 @@ var (
 				{"log5"},
 			},
 		},
+		{
+			name: "matchLogByExprInclude",
+			inc: &filterlog.LogMatchProperties{
+				MatchType: filterlog.Expr,
+				Expressions: []string{
+					"Body matches 'log (1|3)'",
+				},
+			},
+			inLogs: testResourceLogs(getLogsWithBodies()),
+			outLN: [][]string{
+				{"log1"},
+				{"log3"},
+			},
+		},
+		{
+			name: "matchLogByExprExclude",
+			exc: &filterlog.LogMatchProperties{
+				MatchType: filterlog.Expr,
+				Expressions: []string{
+					"Body matches 'log (2|4)'",
+				},
+			},
+			inLogs: testResourceLogs(getLogsWithBodies()),
+			outLN: [][]string{
+				{"log1"},
+				{"log3"},
+			},
+		},
+		{
+			name: "matchLogByMultipleExprInclude",
+			inc: &filterlog.LogMatchProperties{
+				MatchType: filterlog.Expr,
+				Expressions: []string{
+					"Body matches '5'",
+					"Body matches 'log 3'",
+				},
+			},
+			inLogs: testResourceLogs(getLogsWithBodies()),
+			outLN: [][]string{
+				{"log1"},
+				{"log3"},
+			},
+		},
+		{
+			name: "matchLogByMultipleExprExclude",
+			exc: &filterlog.LogMatchProperties{
+				MatchType: filterlog.Expr,
+				Expressions: []string{
+					"Body matches 'log 2'",
+					"Body matches 'log 4'",
+				},
+			},
+			inLogs: testResourceLogs(getLogsWithBodies()),
+			outLN: [][]string{
+				{"log1"},
+				{"log3"},
+			},
+		},
 	}
 )
 
@@ -401,6 +460,9 @@ func testResourceLogs(lwrs []logWithResource) plog.Logs {
 			// Add record level attributes
 			pcommon.NewMapFromRaw(lwrs[i].recordAttributes).CopyTo(l.Attributes())
 			l.Attributes().InsertString("name", name)
+			if lwr.body != nil {
+				lwr.body.CopyTo(l.Body())
+			}
 		}
 	}
 	return ld
@@ -450,4 +512,32 @@ func requireNotPanicsLogs(t *testing.T, logs plog.Logs) {
 	require.NotPanics(t, func() {
 		_ = proc.ConsumeLogs(ctx, logs)
 	})
+}
+
+func getLogsWithBodies() []logWithResource {
+	log1 := pcommon.NewValueMap()
+	log1.MapVal().InsertString("string", "This is log 1")
+	log1.MapVal().InsertInt("int", 5)
+	log2 := pcommon.NewValueString("This is log 2")
+	log3 := pcommon.NewValueString("This is log 3")
+	log4 := pcommon.NewValueString("This is log 4")
+
+	return []logWithResource{
+		{
+			logNames: []string{"log1"},
+			body:     &log1,
+		},
+		{
+			logNames: []string{"log2"},
+			body:     &log2,
+		},
+		{
+			logNames: []string{"log3"},
+			body:     &log3,
+		},
+		{
+			logNames: []string{"log4"},
+			body:     &log4,
+		},
+	}
 }
