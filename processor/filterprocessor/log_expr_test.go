@@ -149,7 +149,7 @@ func TestLogExpr(t *testing.T) {
 					},
 				},
 			}
-			flp, err := newFilterLogsProcessor(&zap.Logger{}, cfg)
+			flp, err := newFilterLogsProcessor(zap.NewNop(), cfg)
 
 			expected := logsToPdata(tc.expected)
 			logs := logsToPdata(tc.logs)

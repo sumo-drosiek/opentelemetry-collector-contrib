@@ -39,7 +39,16 @@ type filterLogProcessor struct {
 	logger           *zap.Logger
 }
 
+const deprecationBanner = `
+*********************************************************************************************************************************************************
+***    Support for "expr" language is deprecated and is going to be dropped soon. Please see the migration document:                                  ***
+***    https://github.com/SumoLogic/sumologic-otel-collector/blob/v0.55.0-sumo-0/docs/Upgrading.md#filter-processor-drop-support-for-expr-language.   ***
+*********************************************************************************************************************************************************
+`
+
 func newFilterLogsProcessor(logger *zap.Logger, cfg *Config) (*filterLogProcessor, error) {
+
+	warnDeprecatedExprFilterConfig(logger, cfg)
 
 	inc, includeResources, includeRecords, err := createLogsMatcher(cfg.Logs.Include)
 	if err != nil {
@@ -205,4 +214,10 @@ func (flp *filterLogProcessor) shouldSkipLogsForResource(resource pcommon.Resour
 	}
 
 	return false
+}
+
+func warnDeprecatedExprFilterConfig(logger *zap.Logger, cfg *Config) {
+	if (cfg.Logs.Exclude != nil && len(cfg.Logs.Exclude.Expressions) > 0) || (cfg.Logs.Include != nil && len(cfg.Logs.Include.Expressions) > 0) {
+		logger.Warn(deprecationBanner)
+	}
 }
