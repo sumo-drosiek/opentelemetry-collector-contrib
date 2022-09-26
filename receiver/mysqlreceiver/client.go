@@ -28,6 +28,7 @@ type client interface {
 	getInnodbStats() (map[string]string, error)
 	getTableIoWaitsStats() ([]TableIoWaitsStats, error)
 	getIndexIoWaitsStats() ([]IndexIoWaitsStats, error)
+	getPerfEventsStatements() ([]PerfEventsStatementsStats, error)
 	Close() error
 }
 
@@ -56,6 +57,24 @@ type TableIoWaitsStats struct {
 type IndexIoWaitsStats struct {
 	IoWaitsStats
 	index string
+}
+
+type PerfEventsStatementsStats struct {
+	schema                    string
+	digest                    string
+	digestText                string
+	countStar                 int64
+	sumTimerWait              int64
+	countErrors               int64
+	countWarnings             int64
+	countRowsAffected         int64
+	countRowsSent             int64
+	countRowsExamined         int64
+	countCreatedTmpDiskTables int64
+	countCreatedTmpTables     int64
+	countSortMergePasses      int64
+	countSortRows             int64
+	countNoIndexUsed          int64
 }
 
 var _ client = (*mySQLClient)(nil)
@@ -143,6 +162,49 @@ func (c *mySQLClient) getIndexIoWaitsStats() ([]IndexIoWaitsStats, error) {
 		err := rows.Scan(&s.schema, &s.name, &s.index,
 			&s.countDelete, &s.countFetch, &s.countInsert, &s.countUpdate,
 			&s.timeDelete, &s.timeFetch, &s.timeInsert, &s.timeUpdate)
+		if err != nil {
+			return nil, err
+		}
+		stats = append(stats, s)
+	}
+
+	return stats, nil
+}
+
+func (c *mySQLClient) getPerfEventsStatements() ([]PerfEventsStatementsStats, error) {
+	const (
+		defaultPerfEventsStatementsDigestTextLimit = 120
+		defaultPerfEventsStatementsLimit           = 250
+		defaultPerfEventsStatementsTimeLimit       = 86400
+	)
+
+	query := fmt.Sprintf("SELECT ifnull(SCHEMA_NAME, 'NONE') as SCHEMA_NAME, DIGEST,"+
+		"LEFT(DIGEST_TEXT, %d) as DIGEST_TEXT, COUNT_STAR, SUM_TIMER_WAIT, SUM_ERRORS,"+
+		"SUM_WARNINGS, SUM_ROWS_AFFECTED, SUM_ROWS_SENT, SUM_ROWS_EXAMINED,"+
+		"SUM_CREATED_TMP_DISK_TABLES, SUM_CREATED_TMP_TABLES, SUM_SORT_MERGE_PASSES,"+
+		"SUM_SORT_ROWS, SUM_NO_INDEX_USED"+
+		"FROM performance_schema.events_statements_summary_by_digest"+
+		"WHERE SCHEMA_NAME NOT IN ('mysql', 'performance_schema', 'information_schema')"+
+		"AND last_seen > DATE_SUB(NOW(), INTERVAL %d SECOND)"+
+		"ORDER BY SUM_TIMER_WAIT DESC"+
+		"LIMIT %d",
+		defaultPerfEventsStatementsDigestTextLimit,
+		defaultPerfEventsStatementsTimeLimit,
+		defaultPerfEventsStatementsLimit)
+
+	rows, err := c.client.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var stats []PerfEventsStatementsStats
+	for rows.Next() {
+		var s PerfEventsStatementsStats
+		err := rows.Scan(&s.schema, &s.digest, &s.digestText,
+			&s.countStar, &s.sumTimerWait, &s.countErrors, &s.countWarnings,
+			&s.countRowsAffected, &s.countRowsSent, &s.countRowsExamined, &s.countCreatedTmpDiskTables,
+			&s.countCreatedTmpTables, &s.countSortMergePasses, &s.countSortRows, &s.countNoIndexUsed)
 		if err != nil {
 			return nil, err
 		}

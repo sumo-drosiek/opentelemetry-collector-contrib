@@ -23,6 +23,7 @@ These are the metrics available for this scraper.
 | **mysql.log_operations** | The number of InnoDB log operations. | 1 | Sum(Int) | <ul> <li>log_operations</li> </ul> |
 | **mysql.operations** | The number of InnoDB operations. | 1 | Sum(Int) | <ul> <li>operations</li> </ul> |
 | **mysql.page_operations** | The number of InnoDB page operations. | 1 | Sum(Int) | <ul> <li>page_operations</li> </ul> |
+| **mysql.perf.events.statements** | Summary of current and recent statement events. | 1 | Sum(Int) | <ul> <li>schema</li> <li>digest</li> <li>digest_text</li> <li>event_states</li> </ul> |
 | **mysql.row_locks** | The number of InnoDB row locks. | 1 | Sum(Int) | <ul> <li>row_locks</li> </ul> |
 | **mysql.row_operations** | The number of InnoDB row operations. | 1 | Sum(Int) | <ul> <li>row_operations</li> </ul> |
 | **mysql.sorts** | The number of MySQL sorts. | 1 | Sum(Int) | <ul> <li>sorts</li> </ul> |
@@ -53,7 +54,10 @@ metrics:
 | buffer_pool_operations (operation) | The buffer pool operations types. | read_ahead_rnd, read_ahead, read_ahead_evicted, read_requests, reads, wait_free, write_requests |
 | buffer_pool_pages (kind) | The buffer pool pages types. | data, free, misc |
 | command (command) | The command types. | execute, close, fetch, prepare, reset, send_long_data |
+| digest (digest) | Digest. |  |
+| digest_text (digest_text) | Text before digestion. |  |
 | double_writes (kind) | The doublewrite types. | pages_written, writes |
+| event_states (event_states) | Possible event states. | star, timer_wait, errors, warnings, rows_affected, rows_sent, rows_examined, created_tmp_disk_tables, created_tmp_tables, sort_merge_passes, sort_rows, no_index_used |
 | handler (kind) | The handler types. | commit, delete, discover, external_lock, mrr_init, prepare, read_first, read_key, read_last, read_next, read_prev, read_rnd, read_rnd_next, rollback, savepoint, savepoint_rollback, update, write |
 | index_name (index) | The name of the index. |  |
 | io_waits_operations (operation) | The io_waits operation type. | delete, fetch, insert, update |

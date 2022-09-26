@@ -75,6 +75,16 @@ attributes:
   index_name:
     value: index
     description: The name of the index.
+  digest:
+    value: digest
+    description: Digest.
+  digest_text:
+    value: digest_text
+    description: Text before digestion.
+  event_states:
+    value: event_states
+    description: Possible event states.
+    enum: [star, timer_wait, errors, warnings, rows_affected, rows_sent, rows_examined, created_tmp_disk_tables, created_tmp_tables, sort_merge_passes, sort_rows, no_index_used]
 
 metrics:
   mysql.buffer_pool.pages:
@@ -279,3 +289,12 @@ metrics:
       monotonic: false
       aggregation: cumulative
     attributes: [threads]
+  mysql.perf.events.statements:
+    enabled: true
+    description: Summary of current and recent statement events.
+    unit: 1
+    sum:
+      value_type: int
+      monotonic: false
+      aggregation: cumulative
+    attributes: [schema, digest, digest_text, event_states]
