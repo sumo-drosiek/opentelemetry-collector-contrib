@@ -34,6 +34,7 @@ type MetricsSettings struct {
 	MysqlLogOperations         MetricSettings `mapstructure:"mysql.log_operations"`
 	MysqlOperations            MetricSettings `mapstructure:"mysql.operations"`
 	MysqlPageOperations        MetricSettings `mapstructure:"mysql.page_operations"`
+	MysqlPerfEventsStatements  MetricSettings `mapstructure:"mysql.perf.events.statements"`
 	MysqlRowLocks              MetricSettings `mapstructure:"mysql.row_locks"`
 	MysqlRowOperations         MetricSettings `mapstructure:"mysql.row_operations"`
 	MysqlSorts                 MetricSettings `mapstructure:"mysql.sorts"`
@@ -87,6 +88,9 @@ func DefaultMetricsSettings() MetricsSettings {
 			Enabled: true,
 		},
 		MysqlPageOperations: MetricSettings{
+			Enabled: true,
+		},
+		MysqlPerfEventsStatements: MetricSettings{
 			Enabled: true,
 		},
 		MysqlRowLocks: MetricSettings{
@@ -278,6 +282,72 @@ func (av AttributeDoubleWrites) String() string {
 var MapAttributeDoubleWrites = map[string]AttributeDoubleWrites{
 	"pages_written": AttributeDoubleWritesPagesWritten,
 	"writes":        AttributeDoubleWritesWrites,
+}
+
+// AttributeEventStates specifies the a value event_states attribute.
+type AttributeEventStates int
+
+const (
+	_ AttributeEventStates = iota
+	AttributeEventStatesStar
+	AttributeEventStatesTimerWait
+	AttributeEventStatesErrors
+	AttributeEventStatesWarnings
+	AttributeEventStatesRowsAffected
+	AttributeEventStatesRowsSent
+	AttributeEventStatesRowsExamined
+	AttributeEventStatesCreatedTmpDiskTables
+	AttributeEventStatesCreatedTmpTables
+	AttributeEventStatesSortMergePasses
+	AttributeEventStatesSortRows
+	AttributeEventStatesNoIndexUsed
+)
+
+// String returns the string representation of the AttributeEventStates.
+func (av AttributeEventStates) String() string {
+	switch av {
+	case AttributeEventStatesStar:
+		return "star"
+	case AttributeEventStatesTimerWait:
+		return "timer_wait"
+	case AttributeEventStatesErrors:
+		return "errors"
+	case AttributeEventStatesWarnings:
+		return "warnings"
+	case AttributeEventStatesRowsAffected:
+		return "rows_affected"
+	case AttributeEventStatesRowsSent:
+		return "rows_sent"
+	case AttributeEventStatesRowsExamined:
+		return "rows_examined"
+	case AttributeEventStatesCreatedTmpDiskTables:
+		return "created_tmp_disk_tables"
+	case AttributeEventStatesCreatedTmpTables:
+		return "created_tmp_tables"
+	case AttributeEventStatesSortMergePasses:
+		return "sort_merge_passes"
+	case AttributeEventStatesSortRows:
+		return "sort_rows"
+	case AttributeEventStatesNoIndexUsed:
+		return "no_index_used"
+	}
+	return ""
+}
+
+// MapAttributeEventStates is a helper map of string to AttributeEventStates attribute value.
+var MapAttributeEventStates = map[string]AttributeEventStates{
+	"star":                    AttributeEventStatesStar,
+	"timer_wait":              AttributeEventStatesTimerWait,
+	"errors":                  AttributeEventStatesErrors,
+	"warnings":                AttributeEventStatesWarnings,
+	"rows_affected":           AttributeEventStatesRowsAffected,
+	"rows_sent":               AttributeEventStatesRowsSent,
+	"rows_examined":           AttributeEventStatesRowsExamined,
+	"created_tmp_disk_tables": AttributeEventStatesCreatedTmpDiskTables,
+	"created_tmp_tables":      AttributeEventStatesCreatedTmpTables,
+	"sort_merge_passes":       AttributeEventStatesSortMergePasses,
+	"sort_rows":               AttributeEventStatesSortRows,
+	"no_index_used":           AttributeEventStatesNoIndexUsed,
 }
 
 // AttributeHandler specifies the a value handler attribute.
@@ -1445,6 +1515,62 @@ func newMetricMysqlPageOperations(settings MetricSettings) metricMysqlPageOperat
 	return m
 }
 
+type metricMysqlPerfEventsStatements struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	settings MetricSettings // metric settings provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills mysql.perf.events.statements metric with initial data.
+func (m *metricMysqlPerfEventsStatements) init() {
+	m.data.SetName("mysql.perf.events.statements")
+	m.data.SetDescription("Summary of current and recent statement events.")
+	m.data.SetUnit("1")
+	m.data.SetEmptySum()
+	m.data.Sum().SetIsMonotonic(false)
+	m.data.Sum().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
+	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricMysqlPerfEventsStatements) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, schemaAttributeValue string, digestAttributeValue string, digestTextAttributeValue string, eventStatesAttributeValue string) {
+	if !m.settings.Enabled {
+		return
+	}
+	dp := m.data.Sum().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetIntValue(val)
+	dp.Attributes().PutString("schema", schemaAttributeValue)
+	dp.Attributes().PutString("digest", digestAttributeValue)
+	dp.Attributes().PutString("digest_text", digestTextAttributeValue)
+	dp.Attributes().PutString("event_states", eventStatesAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricMysqlPerfEventsStatements) updateCapacity() {
+	if m.data.Sum().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Sum().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricMysqlPerfEventsStatements) emit(metrics pmetric.MetricSlice) {
+	if m.settings.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricMysqlPerfEventsStatements(settings MetricSettings) metricMysqlPerfEventsStatements {
+	m := metricMysqlPerfEventsStatements{settings: settings}
+	if settings.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
 type metricMysqlRowLocks struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	settings MetricSettings // metric settings provided by user.
@@ -1790,6 +1916,7 @@ type MetricsBuilder struct {
 	metricMysqlLogOperations         metricMysqlLogOperations
 	metricMysqlOperations            metricMysqlOperations
 	metricMysqlPageOperations        metricMysqlPageOperations
+	metricMysqlPerfEventsStatements  metricMysqlPerfEventsStatements
 	metricMysqlRowLocks              metricMysqlRowLocks
 	metricMysqlRowOperations         metricMysqlRowOperations
 	metricMysqlSorts                 metricMysqlSorts
@@ -1828,6 +1955,7 @@ func NewMetricsBuilder(settings MetricsSettings, buildInfo component.BuildInfo, 
 		metricMysqlLogOperations:         newMetricMysqlLogOperations(settings.MysqlLogOperations),
 		metricMysqlOperations:            newMetricMysqlOperations(settings.MysqlOperations),
 		metricMysqlPageOperations:        newMetricMysqlPageOperations(settings.MysqlPageOperations),
+		metricMysqlPerfEventsStatements:  newMetricMysqlPerfEventsStatements(settings.MysqlPerfEventsStatements),
 		metricMysqlRowLocks:              newMetricMysqlRowLocks(settings.MysqlRowLocks),
 		metricMysqlRowOperations:         newMetricMysqlRowOperations(settings.MysqlRowOperations),
 		metricMysqlSorts:                 newMetricMysqlSorts(settings.MysqlSorts),
@@ -1908,6 +2036,7 @@ func (mb *MetricsBuilder) EmitForResource(rmo ...ResourceMetricsOption) {
 	mb.metricMysqlLogOperations.emit(ils.Metrics())
 	mb.metricMysqlOperations.emit(ils.Metrics())
 	mb.metricMysqlPageOperations.emit(ils.Metrics())
+	mb.metricMysqlPerfEventsStatements.emit(ils.Metrics())
 	mb.metricMysqlRowLocks.emit(ils.Metrics())
 	mb.metricMysqlRowOperations.emit(ils.Metrics())
 	mb.metricMysqlSorts.emit(ils.Metrics())
@@ -2061,6 +2190,11 @@ func (mb *MetricsBuilder) RecordMysqlPageOperationsDataPoint(ts pcommon.Timestam
 	}
 	mb.metricMysqlPageOperations.recordDataPoint(mb.startTime, ts, val, pageOperationsAttributeValue.String())
 	return nil
+}
+
+// RecordMysqlPerfEventsStatementsDataPoint adds a data point to mysql.perf.events.statements metric.
+func (mb *MetricsBuilder) RecordMysqlPerfEventsStatementsDataPoint(ts pcommon.Timestamp, val int64, schemaAttributeValue string, digestAttributeValue string, digestTextAttributeValue string, eventStatesAttributeValue AttributeEventStates) {
+	mb.metricMysqlPerfEventsStatements.recordDataPoint(mb.startTime, ts, val, schemaAttributeValue, digestAttributeValue, digestTextAttributeValue, eventStatesAttributeValue.String())
 }
 
 // RecordMysqlRowLocksDataPoint adds a data point to mysql.row_locks metric.

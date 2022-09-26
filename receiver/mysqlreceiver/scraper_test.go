@@ -42,10 +42,11 @@ func TestScrape(t *testing.T) {
 
 		scraper := newMySQLScraper(componenttest.NewNopReceiverCreateSettings(), cfg)
 		scraper.sqlclient = &mockClient{
-			globalStatsFile:  "global_stats",
-			innodbStatsFile:  "innodb_stats",
-			tableIoWaitsFile: "table_io_waits_stats",
-			indexIoWaitsFile: "index_io_waits_stats",
+			globalStatsFile:          "global_stats",
+			innodbStatsFile:          "innodb_stats",
+			tableIoWaitsFile:         "table_io_waits_stats",
+			indexIoWaitsFile:         "index_io_waits_stats",
+			perfEventsStatementsFile: "perf_events_statements",
 		}
 
 		actualMetrics, err := scraper.scrape(context.Background())
@@ -66,10 +67,11 @@ func TestScrape(t *testing.T) {
 
 		scraper := newMySQLScraper(componenttest.NewNopReceiverCreateSettings(), cfg)
 		scraper.sqlclient = &mockClient{
-			globalStatsFile:  "global_stats_partial",
-			innodbStatsFile:  "innodb_stats_empty",
-			tableIoWaitsFile: "table_io_waits_stats_empty",
-			indexIoWaitsFile: "index_io_waits_stats_empty",
+			globalStatsFile:          "global_stats_partial",
+			innodbStatsFile:          "innodb_stats_empty",
+			tableIoWaitsFile:         "table_io_waits_stats_empty",
+			indexIoWaitsFile:         "index_io_waits_stats_empty",
+			perfEventsStatementsFile: "perf_events_statements_empty",
 		}
 
 		actualMetrics, scrapeErr := scraper.scrape(context.Background())
@@ -92,10 +94,11 @@ func TestScrape(t *testing.T) {
 var _ client = (*mockClient)(nil)
 
 type mockClient struct {
-	globalStatsFile  string
-	innodbStatsFile  string
-	tableIoWaitsFile string
-	indexIoWaitsFile string
+	globalStatsFile          string
+	innodbStatsFile          string
+	tableIoWaitsFile         string
+	indexIoWaitsFile         string
+	perfEventsStatementsFile string
 }
 
 func readFile(fname string) (map[string]string, error) {
@@ -179,6 +182,40 @@ func (c *mockClient) getIndexIoWaitsStats() ([]IndexIoWaitsStats, error) {
 		s.timeFetch, _ = parseInt(text[8])
 		s.timeInsert, _ = parseInt(text[9])
 		s.timeUpdate, _ = parseInt(text[10])
+
+		stats = append(stats, s)
+	}
+	return stats, nil
+}
+
+func (c *mockClient) getPerfEventsStatements() ([]PerfEventsStatementsStats, error) {
+	var stats []PerfEventsStatementsStats
+	file, err := os.Open(filepath.Join("testdata", "scraper", c.perfEventsStatementsFile+".txt"))
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		var s PerfEventsStatementsStats
+		text := strings.Split(scanner.Text(), "\t")
+
+		s.schema = text[0]
+		s.digest = text[1]
+		s.digestText = text[2]
+		s.countStar, _ = parseInt(text[3])
+		s.sumTimerWait, _ = parseInt(text[4])
+		s.countErrors, _ = parseInt(text[5])
+		s.countWarnings, _ = parseInt(text[6])
+		s.countRowsAffected, _ = parseInt(text[7])
+		s.countRowsSent, _ = parseInt(text[8])
+		s.countRowsExamined, _ = parseInt(text[9])
+		s.countCreatedTmpDiskTables, _ = parseInt(text[10])
+		s.countCreatedTmpTables, _ = parseInt(text[11])
+		s.countSortMergePasses, _ = parseInt(text[12])
+		s.countSortRows, _ = parseInt(text[13])
+		s.countNoIndexUsed, _ = parseInt(text[14])
 
 		stats = append(stats, s)
 	}
