@@ -1887,6 +1887,41 @@
                         ]
                      },
                      "unit": "1"
+                  },
+                  {
+                     "description": "The total wait time of the summarized timed events.",
+                     "name": "mysql.perf.events.statements.wait.time",
+                     "sum": {
+                        "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+                        "dataPoints": [
+                           {
+                              "asInt": "2",
+                              "attributes": [
+                                 {
+                                    "key": "digest",
+                                    "value": {
+                                       "stringValue": "070e38632eb4444e50cdcbf0b17474ba801e203add89783a24584951442a2317"
+                                    }
+                                 },
+                                 {
+                                    "key": "digest_text",
+                                    "value": {
+                                       "stringValue": "SHOW GLOBAL STATUS"
+                                    }
+                                 },
+                                 {
+                                    "key": "schema",
+                                    "value": {
+                                       "stringValue": "otel"
+                                    }
+                                 }
+                              ],
+                              "startTimeUnixNano": "1644862687825728000",
+                              "timeUnixNano": "1644862687825772000"
+                           }
+                        ]
+                     },
+                     "unit": "ms"
                   }
                ]
             }

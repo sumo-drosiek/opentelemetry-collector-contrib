@@ -377,6 +377,8 @@ func (m *mySQLScraper) scrapePerfEventsStatementsStats(now pcommon.Timestamp, er
 		m.mb.RecordMysqlPerfEventsStatementsDataPoint(now, s.countSortRows, s.schema, s.digest, s.digestText, metadata.AttributeEventStatesSortRows)
 		m.mb.RecordMysqlPerfEventsStatementsDataPoint(now, s.countStar, s.schema, s.digest, s.digestText, metadata.AttributeEventStatesStar)
 		m.mb.RecordMysqlPerfEventsStatementsDataPoint(now, s.countWarnings, s.schema, s.digest, s.digestText, metadata.AttributeEventStatesWarnings)
+
+		m.mb.RecordMysqlPerfEventsStatementsWaitTimeDataPoint(now, s.sumTimerWait, s.schema, s.digest, s.digestText)
 	}
 }
 
