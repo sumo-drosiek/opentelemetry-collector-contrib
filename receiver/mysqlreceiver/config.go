@@ -15,10 +15,18 @@
 package mysqlreceiver // import "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/mysqlreceiver"
 
 import (
+	"time"
+
 	"go.opentelemetry.io/collector/config/confignet"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/mysqlreceiver/internal/metadata"
+)
+
+const (
+	defaultPerfEventsStatementsDigestTextLimit = 120
+	defaultPerfEventsStatementsLimit           = 250
+	defaultPerfEventsStatementsTimeLimit       = 24 * time.Hour
 )
 
 type Config struct {
@@ -29,4 +37,11 @@ type Config struct {
 	AllowNativePasswords                    bool   `mapstructure:"allow_native_passwords,omitempty"`
 	confignet.NetAddr                       `mapstructure:",squash"`
 	Metrics                                 metadata.MetricsSettings `mapstructure:"metrics"`
+	PerfEventsStatements                    PerfEventsStatements     `mapstructure:"perf_events_statements"`
+}
+
+type PerfEventsStatements struct {
+	DigestTextLimit int           `mapstructure:"digest_text_limit"`
+	Limit           int           `mapstructure:"limit"`
+	TimeLimit       time.Duration `mapstructure:"time_limit"`
 }
