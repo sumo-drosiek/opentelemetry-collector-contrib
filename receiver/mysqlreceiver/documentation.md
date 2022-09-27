@@ -24,7 +24,7 @@ These are the metrics available for this scraper.
 | **mysql.operations** | The number of InnoDB operations. | 1 | Sum(Int) | <ul> <li>operations</li> </ul> |
 | **mysql.page_operations** | The number of InnoDB page operations. | 1 | Sum(Int) | <ul> <li>page_operations</li> </ul> |
 | **mysql.perf.events.statements** | Summary of current and recent statement events. | 1 | Sum(Int) | <ul> <li>schema</li> <li>digest</li> <li>digest_text</li> <li>event_states</li> </ul> |
-| **mysql.perf.events.statements.wait.time** | The total wait time of the summarized timed events. | ms | Sum(Int) | <ul> <li>schema</li> <li>digest</li> <li>digest_text</li> </ul> |
+| **mysql.perf.events.statements.wait.time** | The total wait time of the summarized timed events. | ps | Sum(Int) | <ul> <li>schema</li> <li>digest</li> <li>digest_text</li> </ul> |
 | **mysql.row_locks** | The number of InnoDB row locks. | 1 | Sum(Int) | <ul> <li>row_locks</li> </ul> |
 | **mysql.row_operations** | The number of InnoDB row operations. | 1 | Sum(Int) | <ul> <li>row_operations</li> </ul> |
 | **mysql.sorts** | The number of MySQL sorts. | 1 | Sum(Int) | <ul> <li>sorts</li> </ul> |
