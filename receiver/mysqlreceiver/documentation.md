@@ -58,7 +58,7 @@ metrics:
 | digest (digest) | Digest. |  |
 | digest_text (digest_text) | Text before digestion. |  |
 | double_writes (kind) | The doublewrite types. | pages_written, writes |
-| event_states (event_states) | Possible event states. | star, errors, warnings, rows_affected, rows_sent, rows_examined, created_tmp_disk_tables, created_tmp_tables, sort_merge_passes, sort_rows, no_index_used |
+| event_states (kind) | Possible event states. | star, errors, warnings, rows_affected, rows_sent, rows_examined, created_tmp_disk_tables, created_tmp_tables, sort_merge_passes, sort_rows, no_index_used |
 | handler (kind) | The handler types. | commit, delete, discover, external_lock, mrr_init, prepare, read_first, read_key, read_last, read_next, read_prev, read_rnd, read_rnd_next, rollback, savepoint, savepoint_rollback, update, write |
 | index_name (index) | The name of the index. |  |
 | io_waits_operations (operation) | The io_waits operation type. | delete, fetch, insert, update |

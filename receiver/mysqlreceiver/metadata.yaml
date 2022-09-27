@@ -82,7 +82,7 @@ attributes:
     value: digest_text
     description: Text before digestion.
   event_states:
-    value: event_states
+    value: kind
     description: Possible event states.
     enum: [star, errors, warnings, rows_affected, rows_sent, rows_examined, created_tmp_disk_tables, created_tmp_tables, sort_merge_passes, sort_rows, no_index_used]
 
