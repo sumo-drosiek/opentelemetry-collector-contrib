@@ -85,6 +85,14 @@ attributes:
     value: kind
     description: Possible event states.
     enum: [errors, warnings, rows_affected, rows_sent, rows_examined, created_tmp_disk_tables, created_tmp_tables, sort_merge_passes, sort_rows, no_index_used]
+  read_lock_types:
+    value: read_type
+    description: Read operation types.
+    enum: [normal, with_shared_locks, high_priority, no_insert, external]
+  write_lock_types:
+    value: write_type
+    description: Write operation types.
+    enum: [allow_write, concurrent_insert, low_priority, normal, external]
 
 metrics:
   mysql.buffer_pool.pages:
@@ -307,3 +315,39 @@ metrics:
       monotonic: false
       aggregation: cumulative
     attributes: [schema, digest, digest_text]
+  mysql.perf.table.lock.wait.read:
+    enabled: true
+    description: The total table lock wait read events.
+    unit: "1"
+    sum:
+      value_type: int
+      monotonic: false
+      aggregation: cumulative
+    attributes: [schema, table_name, read_lock_types]
+  mysql.perf.table.lock.wait.read.time:
+    enabled: true
+    description: The total table lock wait read events times.
+    unit: ps
+    sum:
+      value_type: int
+      monotonic: false
+      aggregation: cumulative
+    attributes: [schema, table_name, read_lock_types]
+  mysql.perf.table.lock.wait.write:
+    enabled: true
+    description: The total table lock wait write events.
+    unit: "1"
+    sum:
+      value_type: int
+      monotonic: false
+      aggregation: cumulative
+    attributes: [schema, table_name, write_lock_types]
+  mysql.perf.table.lock.wait.write.time:
+    enabled: true
+    description: The total table lock wait write events times.
+    unit: ps
+    sum:
+      value_type: int
+      monotonic: false
+      aggregation: cumulative
+    attributes: [schema, table_name, write_lock_types]

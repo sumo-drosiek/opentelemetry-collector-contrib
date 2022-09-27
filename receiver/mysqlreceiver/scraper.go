@@ -101,6 +101,9 @@ func (m *mySQLScraper) scrape(context.Context) (pmetric.Metrics, error) {
 	// collect performance event statements metrics.
 	m.scrapeStatementEventsStats(now, errs)
 
+	// collect lock table events metrics
+	m.scrapePerfTableLockWaits(now, errs)
+
 	// collect global status metrics.
 	m.scrapeGlobalStats(now, errs)
 
@@ -378,6 +381,46 @@ func (m *mySQLScraper) scrapeStatementEventsStats(now pcommon.Timestamp, errs *s
 		m.mb.RecordMysqlStatementEventCountDataPoint(now, s.countWarnings, s.schema, s.digest, s.digestText, metadata.AttributeEventStateWarnings)
 
 		m.mb.RecordMysqlStatementEventWaitTimeDataPoint(now, s.sumTimerWait/picosecondsInNanoseconds, s.schema, s.digest, s.digestText)
+	}
+}
+
+func (m *mySQLScraper) scrapePerfTableLockWaits(now pcommon.Timestamp, errs *scrapererror.ScrapeErrors) {
+	perfTableLockWaits, err := m.sqlclient.getPerfTableLockWaits()
+	if err != nil {
+		m.logger.Error("Failed to fetch index io_waits stats", zap.Error(err))
+		errs.AddPartial(8, err)
+		return
+	}
+
+	for i := 0; i < len(perfTableLockWaits); i++ {
+		s := perfTableLockWaits[i]
+		// read data points
+		m.mb.RecordMysqlPerfTableLockWaitReadDataPoint(now, s.countReadNormal, s.schema, s.name, metadata.AttributeReadLockTypesNormal)
+		m.mb.RecordMysqlPerfTableLockWaitReadDataPoint(now, s.countReadWithSharedLocks, s.schema, s.name, metadata.AttributeReadLockTypesWithSharedLocks)
+		m.mb.RecordMysqlPerfTableLockWaitReadDataPoint(now, s.countReadHighPriority, s.schema, s.name, metadata.AttributeReadLockTypesHighPriority)
+		m.mb.RecordMysqlPerfTableLockWaitReadDataPoint(now, s.countReadNoInsert, s.schema, s.name, metadata.AttributeReadLockTypesNoInsert)
+		m.mb.RecordMysqlPerfTableLockWaitReadDataPoint(now, s.countReadExternal, s.schema, s.name, metadata.AttributeReadLockTypesExternal)
+
+		// read time data points
+		m.mb.RecordMysqlPerfTableLockWaitReadTimeDataPoint(now, s.sumTimerReadNormal, s.schema, s.name, metadata.AttributeReadLockTypesNormal)
+		m.mb.RecordMysqlPerfTableLockWaitReadTimeDataPoint(now, s.sumTimerReadWithSharedLocks, s.schema, s.name, metadata.AttributeReadLockTypesWithSharedLocks)
+		m.mb.RecordMysqlPerfTableLockWaitReadTimeDataPoint(now, s.sumTimerReadHighPriority, s.schema, s.name, metadata.AttributeReadLockTypesHighPriority)
+		m.mb.RecordMysqlPerfTableLockWaitReadTimeDataPoint(now, s.sumTimerReadNoInsert, s.schema, s.name, metadata.AttributeReadLockTypesNoInsert)
+		m.mb.RecordMysqlPerfTableLockWaitReadTimeDataPoint(now, s.sumTimerReadExternal, s.schema, s.name, metadata.AttributeReadLockTypesExternal)
+
+		// write data points
+		m.mb.RecordMysqlPerfTableLockWaitWriteDataPoint(now, s.countWriteAllowWrite, s.schema, s.name, metadata.AttributeWriteLockTypesAllowWrite)
+		m.mb.RecordMysqlPerfTableLockWaitWriteDataPoint(now, s.countWriteConcurrentInsert, s.schema, s.name, metadata.AttributeWriteLockTypesConcurrentInsert)
+		m.mb.RecordMysqlPerfTableLockWaitWriteDataPoint(now, s.countWriteLowPriority, s.schema, s.name, metadata.AttributeWriteLockTypesLowPriority)
+		m.mb.RecordMysqlPerfTableLockWaitWriteDataPoint(now, s.countWriteNormal, s.schema, s.name, metadata.AttributeWriteLockTypesNormal)
+		m.mb.RecordMysqlPerfTableLockWaitWriteDataPoint(now, s.countWriteExternal, s.schema, s.name, metadata.AttributeWriteLockTypesExternal)
+
+		// write time data points
+		m.mb.RecordMysqlPerfTableLockWaitWriteTimeDataPoint(now, s.sumTimerWriteAllowWrite, s.schema, s.name, metadata.AttributeWriteLockTypesAllowWrite)
+		m.mb.RecordMysqlPerfTableLockWaitWriteTimeDataPoint(now, s.sumTimerWriteConcurrentInsert, s.schema, s.name, metadata.AttributeWriteLockTypesConcurrentInsert)
+		m.mb.RecordMysqlPerfTableLockWaitWriteTimeDataPoint(now, s.sumTimerWriteLowPriority, s.schema, s.name, metadata.AttributeWriteLockTypesLowPriority)
+		m.mb.RecordMysqlPerfTableLockWaitWriteTimeDataPoint(now, s.sumTimerWriteNormal, s.schema, s.name, metadata.AttributeWriteLockTypesNormal)
+		m.mb.RecordMysqlPerfTableLockWaitWriteTimeDataPoint(now, s.sumTimerWriteExternal, s.schema, s.name, metadata.AttributeWriteLockTypesExternal)
 	}
 }
 
