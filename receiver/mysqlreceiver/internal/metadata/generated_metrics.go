@@ -1543,7 +1543,7 @@ func (m *metricMysqlPerfEventsStatements) recordDataPoint(start pcommon.Timestam
 	dp.Attributes().PutString("schema", schemaAttributeValue)
 	dp.Attributes().PutString("digest", digestAttributeValue)
 	dp.Attributes().PutString("digest_text", digestTextAttributeValue)
-	dp.Attributes().PutString("event_states", eventStatesAttributeValue)
+	dp.Attributes().PutString("kind", eventStatesAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
