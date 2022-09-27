@@ -47,6 +47,7 @@ func TestScrape(t *testing.T) {
 			tableIoWaitsFile:         "table_io_waits_stats",
 			indexIoWaitsFile:         "index_io_waits_stats",
 			perfEventsStatementsFile: "perf_events_statements",
+			perfTableLockWaitsFile:   "perf_table_lock_waits",
 		}
 
 		actualMetrics, err := scraper.scrape(context.Background())
@@ -72,6 +73,7 @@ func TestScrape(t *testing.T) {
 			tableIoWaitsFile:         "table_io_waits_stats_empty",
 			indexIoWaitsFile:         "index_io_waits_stats_empty",
 			perfEventsStatementsFile: "perf_events_statements_empty",
+			perfTableLockWaitsFile:   "perf_table_lock_waits_empty",
 		}
 
 		actualMetrics, scrapeErr := scraper.scrape(context.Background())
@@ -99,6 +101,7 @@ type mockClient struct {
 	tableIoWaitsFile         string
 	indexIoWaitsFile         string
 	perfEventsStatementsFile string
+	perfTableLockWaitsFile   string
 }
 
 func readFile(fname string) (map[string]string, error) {
@@ -216,6 +219,47 @@ func (c *mockClient) getPerfEventsStatements() ([]PerfEventsStatementsStats, err
 		s.countSortMergePasses, _ = parseInt(text[12])
 		s.countSortRows, _ = parseInt(text[13])
 		s.countNoIndexUsed, _ = parseInt(text[14])
+
+		stats = append(stats, s)
+	}
+	return stats, nil
+}
+
+func (c *mockClient) getPerfTableLockWaits() ([]perfTableLockWaits, error) {
+	var stats []perfTableLockWaits
+	file, err := os.Open(filepath.Join("testdata", "scraper", c.perfTableLockWaitsFile+".txt"))
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		var s perfTableLockWaits
+		text := strings.Split(scanner.Text(), "\t")
+
+		s.schema = text[0]
+		s.name = text[1]
+		s.countReadNormal, _ = parseInt(text[2])
+		s.countReadWithSharedLocks, _ = parseInt(text[3])
+		s.countReadHighPriority, _ = parseInt(text[4])
+		s.countReadNoInsert, _ = parseInt(text[5])
+		s.countReadExternal, _ = parseInt(text[6])
+		s.countWriteAllowWrite, _ = parseInt(text[7])
+		s.countWriteConcurrentInsert, _ = parseInt(text[8])
+		s.countWriteLowPriority, _ = parseInt(text[9])
+		s.countWriteNormal, _ = parseInt(text[10])
+		s.countWriteExternal, _ = parseInt(text[11])
+		s.sumTimerReadNormal, _ = parseInt(text[12])
+		s.sumTimerReadWithSharedLocks, _ = parseInt(text[13])
+		s.sumTimerReadHighPriority, _ = parseInt(text[14])
+		s.sumTimerReadNoInsert, _ = parseInt(text[15])
+		s.sumTimerReadExternal, _ = parseInt(text[16])
+		s.sumTimerWriteAllowWrite, _ = parseInt(text[17])
+		s.sumTimerWriteConcurrentInsert, _ = parseInt(text[18])
+		s.sumTimerWriteLowPriority, _ = parseInt(text[19])
+		s.sumTimerWriteNormal, _ = parseInt(text[20])
+		s.sumTimerWriteExternal, _ = parseInt(text[21])
 
 		stats = append(stats, s)
 	}
