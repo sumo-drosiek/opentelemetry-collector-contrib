@@ -19,6 +19,7 @@ type MetricSettings struct {
 
 // MetricsSettings provides settings for mysqlreceiver metrics.
 type MetricsSettings struct {
+	MysqlAborted                      MetricSettings `mapstructure:"mysql.aborted"`
 	MysqlBufferPoolDataPages          MetricSettings `mapstructure:"mysql.buffer_pool.data_pages"`
 	MysqlBufferPoolLimit              MetricSettings `mapstructure:"mysql.buffer_pool.limit"`
 	MysqlBufferPoolOperations         MetricSettings `mapstructure:"mysql.buffer_pool.operations"`
@@ -50,6 +51,9 @@ type MetricsSettings struct {
 
 func DefaultMetricsSettings() MetricsSettings {
 	return MetricsSettings{
+		MysqlAborted: MetricSettings{
+			Enabled: true,
+		},
 		MysqlBufferPoolDataPages: MetricSettings{
 			Enabled: true,
 		},
@@ -132,6 +136,32 @@ func DefaultMetricsSettings() MetricsSettings {
 			Enabled: true,
 		},
 	}
+}
+
+// AttributeAbortionSubject specifies the a value abortion_subject attribute.
+type AttributeAbortionSubject int
+
+const (
+	_ AttributeAbortionSubject = iota
+	AttributeAbortionSubjectConnection
+	AttributeAbortionSubjectClient
+)
+
+// String returns the string representation of the AttributeAbortionSubject.
+func (av AttributeAbortionSubject) String() string {
+	switch av {
+	case AttributeAbortionSubjectConnection:
+		return "connection"
+	case AttributeAbortionSubjectClient:
+		return "client"
+	}
+	return ""
+}
+
+// MapAttributeAbortionSubject is a helper map of string to AttributeAbortionSubject attribute value.
+var MapAttributeAbortionSubject = map[string]AttributeAbortionSubject{
+	"connection": AttributeAbortionSubjectConnection,
+	"client":     AttributeAbortionSubjectClient,
 }
 
 // AttributeBufferPoolData specifies the a value buffer_pool_data attribute.
@@ -808,6 +838,59 @@ var MapAttributeWriteLockTypes = map[string]AttributeWriteLockTypes{
 	"low_priority":      AttributeWriteLockTypesLowPriority,
 	"normal":            AttributeWriteLockTypesNormal,
 	"external":          AttributeWriteLockTypesExternal,
+}
+
+type metricMysqlAborted struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	settings MetricSettings // metric settings provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills mysql.aborted metric with initial data.
+func (m *metricMysqlAborted) init() {
+	m.data.SetName("mysql.aborted")
+	m.data.SetDescription("Aborted operations and conections.")
+	m.data.SetUnit("1")
+	m.data.SetEmptySum()
+	m.data.Sum().SetIsMonotonic(true)
+	m.data.Sum().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
+	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricMysqlAborted) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, abortionSubjectAttributeValue string) {
+	if !m.settings.Enabled {
+		return
+	}
+	dp := m.data.Sum().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetIntValue(val)
+	dp.Attributes().PutString("subject", abortionSubjectAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricMysqlAborted) updateCapacity() {
+	if m.data.Sum().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Sum().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricMysqlAborted) emit(metrics pmetric.MetricSlice) {
+	if m.settings.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricMysqlAborted(settings MetricSettings) metricMysqlAborted {
+	m := metricMysqlAborted{settings: settings}
+	if settings.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
 }
 
 type metricMysqlBufferPoolDataPages struct {
@@ -2268,6 +2351,7 @@ type MetricsBuilder struct {
 	resourceCapacity                        int                 // maximum observed number of resource attributes.
 	metricsBuffer                           pmetric.Metrics     // accumulates metrics data before emitting.
 	buildInfo                               component.BuildInfo // contains version information
+	metricMysqlAborted                      metricMysqlAborted
 	metricMysqlBufferPoolDataPages          metricMysqlBufferPoolDataPages
 	metricMysqlBufferPoolLimit              metricMysqlBufferPoolLimit
 	metricMysqlBufferPoolOperations         metricMysqlBufferPoolOperations
@@ -2312,6 +2396,7 @@ func NewMetricsBuilder(settings MetricsSettings, buildInfo component.BuildInfo, 
 		startTime:                               pcommon.NewTimestampFromTime(time.Now()),
 		metricsBuffer:                           pmetric.NewMetrics(),
 		buildInfo:                               buildInfo,
+		metricMysqlAborted:                      newMetricMysqlAborted(settings.MysqlAborted),
 		metricMysqlBufferPoolDataPages:          newMetricMysqlBufferPoolDataPages(settings.MysqlBufferPoolDataPages),
 		metricMysqlBufferPoolLimit:              newMetricMysqlBufferPoolLimit(settings.MysqlBufferPoolLimit),
 		metricMysqlBufferPoolOperations:         newMetricMysqlBufferPoolOperations(settings.MysqlBufferPoolOperations),
@@ -2398,6 +2483,7 @@ func (mb *MetricsBuilder) EmitForResource(rmo ...ResourceMetricsOption) {
 	ils.Scope().SetName("otelcol/mysqlreceiver")
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
+	mb.metricMysqlAborted.emit(ils.Metrics())
 	mb.metricMysqlBufferPoolDataPages.emit(ils.Metrics())
 	mb.metricMysqlBufferPoolLimit.emit(ils.Metrics())
 	mb.metricMysqlBufferPoolOperations.emit(ils.Metrics())
@@ -2442,6 +2528,16 @@ func (mb *MetricsBuilder) Emit(rmo ...ResourceMetricsOption) pmetric.Metrics {
 	metrics := pmetric.NewMetrics()
 	mb.metricsBuffer.MoveTo(metrics)
 	return metrics
+}
+
+// RecordMysqlAbortedDataPoint adds a data point to mysql.aborted metric.
+func (mb *MetricsBuilder) RecordMysqlAbortedDataPoint(ts pcommon.Timestamp, inputVal string, abortionSubjectAttributeValue AttributeAbortionSubject) error {
+	val, err := strconv.ParseInt(inputVal, 10, 64)
+	if err != nil {
+		return fmt.Errorf("failed to parse int64 for MysqlAborted, value was %s: %w", inputVal, err)
+	}
+	mb.metricMysqlAborted.recordDataPoint(mb.startTime, ts, val, abortionSubjectAttributeValue.String())
+	return nil
 }
 
 // RecordMysqlBufferPoolDataPagesDataPoint adds a data point to mysql.buffer_pool.data_pages metric.

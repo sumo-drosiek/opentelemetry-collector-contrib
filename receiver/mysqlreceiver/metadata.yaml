@@ -93,6 +93,10 @@ attributes:
     value: write_type
     description: Write operation types.
     enum: [allow_write, concurrent_insert, low_priority, normal, external]
+  abortion_subject:
+    value: subject
+    description: Subject of abortion.
+    enum: [connection, client]
 
 metrics:
   mysql.buffer_pool.pages:
@@ -351,3 +355,13 @@ metrics:
       monotonic: false
       aggregation: cumulative
     attributes: [schema, table_name, write_lock_types]
+  mysql.aborted:
+    enabled: true
+    description: Aborted operations and conections.
+    unit: "1"
+    sum:
+      value_type: int
+      input_type: string
+      monotonic: true
+      aggregation: cumulative
+    attributes: [abortion_subject]

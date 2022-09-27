@@ -2462,6 +2462,43 @@
                         ]
                      },
                      "unit": "ps"
+                  },
+                  {
+                     "description": "Aborted operations and conections.",
+                     "name": "mysql.aborted",
+                     "sum": {
+                        "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+                        "dataPoints": [
+                           {
+                              "asInt": "1",
+                              "attributes": [
+                                 {
+                                    "key": "subject",
+                                    "value": {
+                                       "stringValue": "client"
+                                    }
+                                 }
+                              ],
+                              "startTimeUnixNano": "1644862687825728000",
+                              "timeUnixNano": "1644862687825772000"
+                           },
+                           {
+                              "asInt": "2",
+                              "attributes": [
+                                 {
+                                    "key": "subject",
+                                    "value": {
+                                       "stringValue": "connection"
+                                    }
+                                 }
+                              ],
+                              "startTimeUnixNano": "1644862687825728000",
+                              "timeUnixNano": "1644862687825772000"
+                           }
+                        ],
+                        "isMonotonic": true
+                     },
+                     "unit": "1"
                   }
                ]
             }

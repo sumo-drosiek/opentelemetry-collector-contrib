@@ -8,6 +8,7 @@ These are the metrics available for this scraper.
 
 | Name | Description | Unit | Type | Attributes |
 | ---- | ----------- | ---- | ---- | ---------- |
+| **mysql.aborted** | Aborted operations and conections. | 1 | Sum(Int) | <ul> <li>abortion_subject</li> </ul> |
 | **mysql.buffer_pool.data_pages** | The number of data pages in the InnoDB buffer pool. | 1 | Sum(Int) | <ul> <li>buffer_pool_data</li> </ul> |
 | **mysql.buffer_pool.limit** | The configured size of the InnoDB buffer pool. | By | Sum(Int) | <ul> </ul> |
 | **mysql.buffer_pool.operations** | The number of operations on the InnoDB buffer pool. | 1 | Sum(Int) | <ul> <li>buffer_pool_operations</li> </ul> |
@@ -55,6 +56,7 @@ metrics:
 
 | Name | Description | Values |
 | ---- | ----------- | ------ |
+| abortion_subject (subject) | Subject of abortion. | connection, client |
 | buffer_pool_data (status) | The status of buffer pool data. | dirty, clean |
 | buffer_pool_operations (operation) | The buffer pool operations types. | read_ahead_rnd, read_ahead, read_ahead_evicted, read_requests, reads, wait_free, write_requests |
 | buffer_pool_pages (kind) | The buffer pool pages types. | data, free, misc |

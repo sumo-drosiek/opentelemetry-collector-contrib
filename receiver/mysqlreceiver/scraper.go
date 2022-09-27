@@ -125,6 +125,13 @@ func (m *mySQLScraper) scrapeGlobalStats(now pcommon.Timestamp, errs *scrapererr
 
 	for k, v := range globalStats {
 		switch k {
+		// aborted operations
+		case "Aborted_clients":
+			addPartialIfError(errs, m.mb.RecordMysqlAbortedDataPoint(now, v,
+				metadata.AttributeAbortionSubjectClient))
+		case "Aborted_connects":
+			addPartialIfError(errs, m.mb.RecordMysqlAbortedDataPoint(now, v,
+				metadata.AttributeAbortionSubjectConnection))
 
 		// buffer_pool.pages
 		case "Innodb_buffer_pool_pages_data":
