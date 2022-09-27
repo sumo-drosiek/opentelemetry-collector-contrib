@@ -17,6 +17,7 @@ package mysqlreceiver // import "github.com/open-telemetry/opentelemetry-collect
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	// registers the mysql driver
 	"github.com/go-sql-driver/mysql"
@@ -33,8 +34,11 @@ type client interface {
 }
 
 type mySQLClient struct {
-	connStr string
-	client  *sql.DB
+	connStr                             string
+	client                              *sql.DB
+	perfEventsStatementsDigestTextLimit int
+	perfEventsStatementsLimit           int
+	perfEventsStatementsTimeLimit       time.Duration
 }
 
 type IoWaitsStats struct {
@@ -91,7 +95,10 @@ func newMySQLClient(conf *Config) client {
 	connStr := driverConf.FormatDSN()
 
 	return &mySQLClient{
-		connStr: connStr,
+		connStr:                             connStr,
+		perfEventsStatementsDigestTextLimit: conf.PerfEventsStatements.DigestTextLimit,
+		perfEventsStatementsLimit:           conf.PerfEventsStatements.Limit,
+		perfEventsStatementsTimeLimit:       conf.PerfEventsStatements.TimeLimit,
 	}
 }
 
@@ -172,12 +179,6 @@ func (c *mySQLClient) getIndexIoWaitsStats() ([]IndexIoWaitsStats, error) {
 }
 
 func (c *mySQLClient) getPerfEventsStatements() ([]PerfEventsStatementsStats, error) {
-	const (
-		defaultPerfEventsStatementsDigestTextLimit = 120
-		defaultPerfEventsStatementsLimit           = 250
-		defaultPerfEventsStatementsTimeLimit       = 86400
-	)
-
 	query := fmt.Sprintf("SELECT ifnull(SCHEMA_NAME, 'NONE') as SCHEMA_NAME, DIGEST,"+
 		"LEFT(DIGEST_TEXT, %d) as DIGEST_TEXT, COUNT_STAR, SUM_TIMER_WAIT, SUM_ERRORS,"+
 		"SUM_WARNINGS, SUM_ROWS_AFFECTED, SUM_ROWS_SENT, SUM_ROWS_EXAMINED,"+
@@ -188,9 +189,9 @@ func (c *mySQLClient) getPerfEventsStatements() ([]PerfEventsStatementsStats, er
 		"AND last_seen > DATE_SUB(NOW(), INTERVAL %d SECOND)"+
 		"ORDER BY SUM_TIMER_WAIT DESC"+
 		"LIMIT %d",
-		defaultPerfEventsStatementsDigestTextLimit,
-		defaultPerfEventsStatementsTimeLimit,
-		defaultPerfEventsStatementsLimit)
+		c.perfEventsStatementsDigestTextLimit,
+		int64(c.perfEventsStatementsTimeLimit.Seconds()),
+		c.perfEventsStatementsLimit)
 
 	rows, err := c.client.Query(query)
 	if err != nil {
