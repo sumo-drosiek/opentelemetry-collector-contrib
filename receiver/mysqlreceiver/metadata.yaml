@@ -301,7 +301,7 @@ metrics:
   mysql.perf.events.statements.wait.time:
     enabled: true
     description: The total wait time of the summarized timed events.
-    unit: ms
+    unit: ps
     sum:
       value_type: int
       monotonic: false

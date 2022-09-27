@@ -1581,7 +1581,7 @@ type metricMysqlPerfEventsStatementsWaitTime struct {
 func (m *metricMysqlPerfEventsStatementsWaitTime) init() {
 	m.data.SetName("mysql.perf.events.statements.wait.time")
 	m.data.SetDescription("The total wait time of the summarized timed events.")
-	m.data.SetUnit("ms")
+	m.data.SetUnit("ps")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(false)
 	m.data.Sum().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
