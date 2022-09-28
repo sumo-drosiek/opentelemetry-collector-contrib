@@ -29,7 +29,7 @@ The following settings are optional:
 - `transport`: (default = `tcp`): Defines the network to use for connecting to the server.
 - `statement_events`: Additional configuration for query to build `mysql.statement_events.count` and `mysql.statement_events.wait.time` metrics:
   - `digest_text_limit` - maximum length of `digest_text`. Longer text will be truncated (default=`120`)
-  - `time_limit` - maximum time from since the statements have been observed last time (default=`24d`)
+  - `time_limit` - maximum time from since the statements have been observed last time (default=`24h`)
   - `limit` - limit of records, which is maximum number of generated metrics (default=`250`)
 
 ### Example Configuration
