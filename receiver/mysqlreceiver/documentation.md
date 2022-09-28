@@ -23,11 +23,11 @@ These are the metrics available for this scraper.
 | **mysql.log_operations** | The number of InnoDB log operations. | 1 | Sum(Int) | <ul> <li>log_operations</li> </ul> |
 | **mysql.operations** | The number of InnoDB operations. | 1 | Sum(Int) | <ul> <li>operations</li> </ul> |
 | **mysql.page_operations** | The number of InnoDB page operations. | 1 | Sum(Int) | <ul> <li>page_operations</li> </ul> |
-| **mysql.perf.events.statements** | Summary of current and recent statement events. | 1 | Sum(Int) | <ul> <li>schema</li> <li>digest</li> <li>digest_text</li> <li>event_states</li> </ul> |
-| **mysql.perf.events.statements.wait.time** | The total wait time of the summarized timed events. | ps | Sum(Int) | <ul> <li>schema</li> <li>digest</li> <li>digest_text</li> </ul> |
 | **mysql.row_locks** | The number of InnoDB row locks. | 1 | Sum(Int) | <ul> <li>row_locks</li> </ul> |
 | **mysql.row_operations** | The number of InnoDB row operations. | 1 | Sum(Int) | <ul> <li>row_operations</li> </ul> |
 | **mysql.sorts** | The number of MySQL sorts. | 1 | Sum(Int) | <ul> <li>sorts</li> </ul> |
+| **mysql.statement_event.count** | Summary of current and recent statement events. | 1 | Sum(Int) | <ul> <li>schema</li> <li>digest</li> <li>digest_text</li> <li>event_states</li> </ul> |
+| **mysql.statement_event.wait.time** | The total wait time of the summarized timed events. | ns | Sum(Int) | <ul> <li>schema</li> <li>digest</li> <li>digest_text</li> </ul> |
 | **mysql.table.io.wait.count** | The total count of I/O wait events for a table. | 1 | Sum(Int) | <ul> <li>io_waits_operations</li> <li>table_name</li> <li>schema</li> </ul> |
 | **mysql.table.io.wait.time** | The total time of I/O wait events for a table. | ns | Sum(Int) | <ul> <li>io_waits_operations</li> <li>table_name</li> <li>schema</li> </ul> |
 | **mysql.threads** | The state of MySQL threads. | 1 | Sum(Int) | <ul> <li>threads</li> </ul> |

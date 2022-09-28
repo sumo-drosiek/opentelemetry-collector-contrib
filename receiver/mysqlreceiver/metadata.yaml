@@ -289,7 +289,7 @@ metrics:
       monotonic: false
       aggregation: cumulative
     attributes: [threads]
-  mysql.perf.events.statements:
+  mysql.statement_event.count:
     enabled: true
     description: Summary of current and recent statement events.
     unit: 1
@@ -298,10 +298,10 @@ metrics:
       monotonic: false
       aggregation: cumulative
     attributes: [schema, digest, digest_text, event_states]
-  mysql.perf.events.statements.wait.time:
+  mysql.statement_event.wait.time:
     enabled: true
     description: The total wait time of the summarized timed events.
-    unit: ps
+    unit: ns
     sum:
       value_type: int
       monotonic: false

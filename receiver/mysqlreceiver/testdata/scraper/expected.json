@@ -1539,7 +1539,7 @@
                   },
                   {
                      "description": "Summary of current and recent statement events.",
-                     "name": "mysql.perf.events.statements",
+                     "name": "mysql.statement_event.count",
                      "sum": {
                         "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
                         "dataPoints": [
@@ -1890,7 +1890,7 @@
                   },
                   {
                      "description": "The total wait time of the summarized timed events.",
-                     "name": "mysql.perf.events.statements.wait.time",
+                     "name": "mysql.statement_event.wait.time",
                      "sum": {
                         "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
                         "dataPoints": [
@@ -1921,7 +1921,7 @@
                            }
                         ]
                      },
-                     "unit": "ps"
+                     "unit": "ns"
                   }
                ]
             }

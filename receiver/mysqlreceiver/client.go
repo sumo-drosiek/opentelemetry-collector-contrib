@@ -29,16 +29,16 @@ type client interface {
 	getInnodbStats() (map[string]string, error)
 	getTableIoWaitsStats() ([]TableIoWaitsStats, error)
 	getIndexIoWaitsStats() ([]IndexIoWaitsStats, error)
-	getPerfEventsStatements() ([]PerfEventsStatementsStats, error)
+	getStatementEventsStats() ([]StatementEventStats, error)
 	Close() error
 }
 
 type mySQLClient struct {
-	connStr                             string
-	client                              *sql.DB
-	perfEventsStatementsDigestTextLimit int
-	perfEventsStatementsLimit           int
-	perfEventsStatementsTimeLimit       time.Duration
+	connStr                        string
+	client                         *sql.DB
+	statementEventsDigestTextLimit int
+	statementEventsLimit           int
+	statementEventsTimeLimit       time.Duration
 }
 
 type IoWaitsStats struct {
@@ -63,7 +63,7 @@ type IndexIoWaitsStats struct {
 	index string
 }
 
-type PerfEventsStatementsStats struct {
+type StatementEventStats struct {
 	schema                    string
 	digest                    string
 	digestText                string
@@ -95,10 +95,10 @@ func newMySQLClient(conf *Config) client {
 	connStr := driverConf.FormatDSN()
 
 	return &mySQLClient{
-		connStr:                             connStr,
-		perfEventsStatementsDigestTextLimit: conf.PerfEventsStatements.DigestTextLimit,
-		perfEventsStatementsLimit:           conf.PerfEventsStatements.Limit,
-		perfEventsStatementsTimeLimit:       conf.PerfEventsStatements.TimeLimit,
+		connStr:                        connStr,
+		statementEventsDigestTextLimit: conf.StatementEvents.DigestTextLimit,
+		statementEventsLimit:           conf.StatementEvents.Limit,
+		statementEventsTimeLimit:       conf.StatementEvents.TimeLimit,
 	}
 }
 
@@ -178,7 +178,7 @@ func (c *mySQLClient) getIndexIoWaitsStats() ([]IndexIoWaitsStats, error) {
 	return stats, nil
 }
 
-func (c *mySQLClient) getPerfEventsStatements() ([]PerfEventsStatementsStats, error) {
+func (c *mySQLClient) getStatementEventsStats() ([]StatementEventStats, error) {
 	query := fmt.Sprintf("SELECT ifnull(SCHEMA_NAME, 'NONE') as SCHEMA_NAME, DIGEST,"+
 		"LEFT(DIGEST_TEXT, %d) as DIGEST_TEXT, COUNT_STAR, SUM_TIMER_WAIT, SUM_ERRORS,"+
 		"SUM_WARNINGS, SUM_ROWS_AFFECTED, SUM_ROWS_SENT, SUM_ROWS_EXAMINED,"+
@@ -189,9 +189,9 @@ func (c *mySQLClient) getPerfEventsStatements() ([]PerfEventsStatementsStats, er
 		"AND last_seen > DATE_SUB(NOW(), INTERVAL %d SECOND)"+
 		"ORDER BY SUM_TIMER_WAIT DESC"+
 		"LIMIT %d",
-		c.perfEventsStatementsDigestTextLimit,
-		int64(c.perfEventsStatementsTimeLimit.Seconds()),
-		c.perfEventsStatementsLimit)
+		c.statementEventsDigestTextLimit,
+		int64(c.statementEventsTimeLimit.Seconds()),
+		c.statementEventsLimit)
 
 	rows, err := c.client.Query(query)
 	if err != nil {
@@ -199,9 +199,9 @@ func (c *mySQLClient) getPerfEventsStatements() ([]PerfEventsStatementsStats, er
 	}
 	defer rows.Close()
 
-	var stats []PerfEventsStatementsStats
+	var stats []StatementEventStats
 	for rows.Next() {
-		var s PerfEventsStatementsStats
+		var s StatementEventStats
 		err := rows.Scan(&s.schema, &s.digest, &s.digestText,
 			&s.countStar, &s.sumTimerWait, &s.countErrors, &s.countWarnings,
 			&s.countRowsAffected, &s.countRowsSent, &s.countRowsExamined, &s.countCreatedTmpDiskTables,

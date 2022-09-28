@@ -42,11 +42,11 @@ func TestScrape(t *testing.T) {
 
 		scraper := newMySQLScraper(componenttest.NewNopReceiverCreateSettings(), cfg)
 		scraper.sqlclient = &mockClient{
-			globalStatsFile:          "global_stats",
-			innodbStatsFile:          "innodb_stats",
-			tableIoWaitsFile:         "table_io_waits_stats",
-			indexIoWaitsFile:         "index_io_waits_stats",
-			perfEventsStatementsFile: "perf_events_statements",
+			globalStatsFile:     "global_stats",
+			innodbStatsFile:     "innodb_stats",
+			tableIoWaitsFile:    "table_io_waits_stats",
+			indexIoWaitsFile:    "index_io_waits_stats",
+			statementEventsFile: "statement_events",
 		}
 
 		actualMetrics, err := scraper.scrape(context.Background())
@@ -67,11 +67,11 @@ func TestScrape(t *testing.T) {
 
 		scraper := newMySQLScraper(componenttest.NewNopReceiverCreateSettings(), cfg)
 		scraper.sqlclient = &mockClient{
-			globalStatsFile:          "global_stats_partial",
-			innodbStatsFile:          "innodb_stats_empty",
-			tableIoWaitsFile:         "table_io_waits_stats_empty",
-			indexIoWaitsFile:         "index_io_waits_stats_empty",
-			perfEventsStatementsFile: "perf_events_statements_empty",
+			globalStatsFile:     "global_stats_partial",
+			innodbStatsFile:     "innodb_stats_empty",
+			tableIoWaitsFile:    "table_io_waits_stats_empty",
+			indexIoWaitsFile:    "index_io_waits_stats_empty",
+			statementEventsFile: "statement_events_empty",
 		}
 
 		actualMetrics, scrapeErr := scraper.scrape(context.Background())
@@ -94,11 +94,11 @@ func TestScrape(t *testing.T) {
 var _ client = (*mockClient)(nil)
 
 type mockClient struct {
-	globalStatsFile          string
-	innodbStatsFile          string
-	tableIoWaitsFile         string
-	indexIoWaitsFile         string
-	perfEventsStatementsFile string
+	globalStatsFile     string
+	innodbStatsFile     string
+	tableIoWaitsFile    string
+	indexIoWaitsFile    string
+	statementEventsFile string
 }
 
 func readFile(fname string) (map[string]string, error) {
@@ -188,9 +188,9 @@ func (c *mockClient) getIndexIoWaitsStats() ([]IndexIoWaitsStats, error) {
 	return stats, nil
 }
 
-func (c *mockClient) getPerfEventsStatements() ([]PerfEventsStatementsStats, error) {
-	var stats []PerfEventsStatementsStats
-	file, err := os.Open(filepath.Join("testdata", "scraper", c.perfEventsStatementsFile+".txt"))
+func (c *mockClient) getStatementEventsStats() ([]StatementEventStats, error) {
+	var stats []StatementEventStats
+	file, err := os.Open(filepath.Join("testdata", "scraper", c.statementEventsFile+".txt"))
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +198,7 @@ func (c *mockClient) getPerfEventsStatements() ([]PerfEventsStatementsStats, err
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		var s PerfEventsStatementsStats
+		var s StatementEventStats
 		text := strings.Split(scanner.Text(), "\t")
 
 		s.schema = text[0]

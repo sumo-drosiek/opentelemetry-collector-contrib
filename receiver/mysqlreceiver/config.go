@@ -24,9 +24,9 @@ import (
 )
 
 const (
-	defaultPerfEventsStatementsDigestTextLimit = 120
-	defaultPerfEventsStatementsLimit           = 250
-	defaultPerfEventsStatementsTimeLimit       = 24 * time.Hour
+	defaultStatementEventsDigestTextLimit = 120
+	defaultStatementEventsLimit           = 250
+	defaultStatementEventsTimeLimit       = 24 * time.Hour
 )
 
 type Config struct {
@@ -37,10 +37,10 @@ type Config struct {
 	AllowNativePasswords                    bool   `mapstructure:"allow_native_passwords,omitempty"`
 	confignet.NetAddr                       `mapstructure:",squash"`
 	Metrics                                 metadata.MetricsSettings `mapstructure:"metrics"`
-	PerfEventsStatements                    PerfEventsStatements     `mapstructure:"perf_events_statements"`
+	StatementEvents                         StatementEventsConfig    `mapstructure:"statement_events"`
 }
 
-type PerfEventsStatements struct {
+type StatementEventsConfig struct {
 	DigestTextLimit int           `mapstructure:"digest_text_limit"`
 	Limit           int           `mapstructure:"limit"`
 	TimeLimit       time.Duration `mapstructure:"time_limit"`
