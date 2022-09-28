@@ -67,7 +67,6 @@ type StatementEventStats struct {
 	schema                    string
 	digest                    string
 	digestText                string
-	countStar                 int64
 	sumTimerWait              int64
 	countErrors               int64
 	countWarnings             int64
@@ -180,7 +179,7 @@ func (c *mySQLClient) getIndexIoWaitsStats() ([]IndexIoWaitsStats, error) {
 
 func (c *mySQLClient) getStatementEventsStats() ([]StatementEventStats, error) {
 	query := fmt.Sprintf("SELECT ifnull(SCHEMA_NAME, 'NONE') as SCHEMA_NAME, DIGEST,"+
-		"LEFT(DIGEST_TEXT, %d) as DIGEST_TEXT, COUNT_STAR, SUM_TIMER_WAIT, SUM_ERRORS,"+
+		"LEFT(DIGEST_TEXT, %d) as DIGEST_TEXT, SUM_TIMER_WAIT, SUM_ERRORS,"+
 		"SUM_WARNINGS, SUM_ROWS_AFFECTED, SUM_ROWS_SENT, SUM_ROWS_EXAMINED,"+
 		"SUM_CREATED_TMP_DISK_TABLES, SUM_CREATED_TMP_TABLES, SUM_SORT_MERGE_PASSES,"+
 		"SUM_SORT_ROWS, SUM_NO_INDEX_USED"+
@@ -203,7 +202,7 @@ func (c *mySQLClient) getStatementEventsStats() ([]StatementEventStats, error) {
 	for rows.Next() {
 		var s StatementEventStats
 		err := rows.Scan(&s.schema, &s.digest, &s.digestText,
-			&s.countStar, &s.sumTimerWait, &s.countErrors, &s.countWarnings,
+			&s.sumTimerWait, &s.countErrors, &s.countWarnings,
 			&s.countRowsAffected, &s.countRowsSent, &s.countRowsExamined, &s.countCreatedTmpDiskTables,
 			&s.countCreatedTmpTables, &s.countSortMergePasses, &s.countSortRows, &s.countNoIndexUsed)
 		if err != nil {

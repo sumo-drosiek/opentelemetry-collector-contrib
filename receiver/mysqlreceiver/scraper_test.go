@@ -204,18 +204,17 @@ func (c *mockClient) getStatementEventsStats() ([]StatementEventStats, error) {
 		s.schema = text[0]
 		s.digest = text[1]
 		s.digestText = text[2]
-		s.countStar, _ = parseInt(text[3])
-		s.sumTimerWait, _ = parseInt(text[4])
-		s.countErrors, _ = parseInt(text[5])
-		s.countWarnings, _ = parseInt(text[6])
-		s.countRowsAffected, _ = parseInt(text[7])
-		s.countRowsSent, _ = parseInt(text[8])
-		s.countRowsExamined, _ = parseInt(text[9])
-		s.countCreatedTmpDiskTables, _ = parseInt(text[10])
-		s.countCreatedTmpTables, _ = parseInt(text[11])
-		s.countSortMergePasses, _ = parseInt(text[12])
-		s.countSortRows, _ = parseInt(text[13])
-		s.countNoIndexUsed, _ = parseInt(text[14])
+		s.sumTimerWait, _ = parseInt(text[3])
+		s.countErrors, _ = parseInt(text[4])
+		s.countWarnings, _ = parseInt(text[5])
+		s.countRowsAffected, _ = parseInt(text[6])
+		s.countRowsSent, _ = parseInt(text[7])
+		s.countRowsExamined, _ = parseInt(text[8])
+		s.countCreatedTmpDiskTables, _ = parseInt(text[9])
+		s.countCreatedTmpTables, _ = parseInt(text[10])
+		s.countSortMergePasses, _ = parseInt(text[11])
+		s.countSortRows, _ = parseInt(text[12])
+		s.countNoIndexUsed, _ = parseInt(text[13])
 
 		stats = append(stats, s)
 	}

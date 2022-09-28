@@ -293,7 +293,6 @@ type AttributeEventStates int
 
 const (
 	_ AttributeEventStates = iota
-	AttributeEventStatesStar
 	AttributeEventStatesErrors
 	AttributeEventStatesWarnings
 	AttributeEventStatesRowsAffected
@@ -309,8 +308,6 @@ const (
 // String returns the string representation of the AttributeEventStates.
 func (av AttributeEventStates) String() string {
 	switch av {
-	case AttributeEventStatesStar:
-		return "star"
 	case AttributeEventStatesErrors:
 		return "errors"
 	case AttributeEventStatesWarnings:
@@ -337,7 +334,6 @@ func (av AttributeEventStates) String() string {
 
 // MapAttributeEventStates is a helper map of string to AttributeEventStates attribute value.
 var MapAttributeEventStates = map[string]AttributeEventStates{
-	"star":                    AttributeEventStatesStar,
 	"errors":                  AttributeEventStatesErrors,
 	"warnings":                AttributeEventStatesWarnings,
 	"rows_affected":           AttributeEventStatesRowsAffected,
