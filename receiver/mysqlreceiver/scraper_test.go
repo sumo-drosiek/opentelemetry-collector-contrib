@@ -39,6 +39,8 @@ func TestScrape(t *testing.T) {
 		cfg.Username = "otel"
 		cfg.Password = "otel"
 		cfg.NetAddr = confignet.NetAddr{Endpoint: "localhost:3306"}
+		cfg.Metrics.MysqlStatementEventCount.Enabled = true
+		cfg.Metrics.MysqlStatementEventWaitTime.Enabled = true
 
 		scraper := newMySQLScraper(componenttest.NewNopReceiverCreateSettings(), cfg)
 		scraper.sqlclient = &mockClient{

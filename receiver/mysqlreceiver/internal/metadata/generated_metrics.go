@@ -101,10 +101,10 @@ func DefaultMetricsSettings() MetricsSettings {
 			Enabled: true,
 		},
 		MysqlStatementEventCount: MetricSettings{
-			Enabled: true,
+			Enabled: false,
 		},
 		MysqlStatementEventWaitTime: MetricSettings{
-			Enabled: true,
+			Enabled: false,
 		},
 		MysqlTableIoWaitCount: MetricSettings{
 			Enabled: true,
@@ -288,62 +288,62 @@ var MapAttributeDoubleWrites = map[string]AttributeDoubleWrites{
 	"writes":        AttributeDoubleWritesWrites,
 }
 
-// AttributeEventStates specifies the a value event_states attribute.
-type AttributeEventStates int
+// AttributeEventState specifies the a value event_state attribute.
+type AttributeEventState int
 
 const (
-	_ AttributeEventStates = iota
-	AttributeEventStatesErrors
-	AttributeEventStatesWarnings
-	AttributeEventStatesRowsAffected
-	AttributeEventStatesRowsSent
-	AttributeEventStatesRowsExamined
-	AttributeEventStatesCreatedTmpDiskTables
-	AttributeEventStatesCreatedTmpTables
-	AttributeEventStatesSortMergePasses
-	AttributeEventStatesSortRows
-	AttributeEventStatesNoIndexUsed
+	_ AttributeEventState = iota
+	AttributeEventStateErrors
+	AttributeEventStateWarnings
+	AttributeEventStateRowsAffected
+	AttributeEventStateRowsSent
+	AttributeEventStateRowsExamined
+	AttributeEventStateCreatedTmpDiskTables
+	AttributeEventStateCreatedTmpTables
+	AttributeEventStateSortMergePasses
+	AttributeEventStateSortRows
+	AttributeEventStateNoIndexUsed
 )
 
-// String returns the string representation of the AttributeEventStates.
-func (av AttributeEventStates) String() string {
+// String returns the string representation of the AttributeEventState.
+func (av AttributeEventState) String() string {
 	switch av {
-	case AttributeEventStatesErrors:
+	case AttributeEventStateErrors:
 		return "errors"
-	case AttributeEventStatesWarnings:
+	case AttributeEventStateWarnings:
 		return "warnings"
-	case AttributeEventStatesRowsAffected:
+	case AttributeEventStateRowsAffected:
 		return "rows_affected"
-	case AttributeEventStatesRowsSent:
+	case AttributeEventStateRowsSent:
 		return "rows_sent"
-	case AttributeEventStatesRowsExamined:
+	case AttributeEventStateRowsExamined:
 		return "rows_examined"
-	case AttributeEventStatesCreatedTmpDiskTables:
+	case AttributeEventStateCreatedTmpDiskTables:
 		return "created_tmp_disk_tables"
-	case AttributeEventStatesCreatedTmpTables:
+	case AttributeEventStateCreatedTmpTables:
 		return "created_tmp_tables"
-	case AttributeEventStatesSortMergePasses:
+	case AttributeEventStateSortMergePasses:
 		return "sort_merge_passes"
-	case AttributeEventStatesSortRows:
+	case AttributeEventStateSortRows:
 		return "sort_rows"
-	case AttributeEventStatesNoIndexUsed:
+	case AttributeEventStateNoIndexUsed:
 		return "no_index_used"
 	}
 	return ""
 }
 
-// MapAttributeEventStates is a helper map of string to AttributeEventStates attribute value.
-var MapAttributeEventStates = map[string]AttributeEventStates{
-	"errors":                  AttributeEventStatesErrors,
-	"warnings":                AttributeEventStatesWarnings,
-	"rows_affected":           AttributeEventStatesRowsAffected,
-	"rows_sent":               AttributeEventStatesRowsSent,
-	"rows_examined":           AttributeEventStatesRowsExamined,
-	"created_tmp_disk_tables": AttributeEventStatesCreatedTmpDiskTables,
-	"created_tmp_tables":      AttributeEventStatesCreatedTmpTables,
-	"sort_merge_passes":       AttributeEventStatesSortMergePasses,
-	"sort_rows":               AttributeEventStatesSortRows,
-	"no_index_used":           AttributeEventStatesNoIndexUsed,
+// MapAttributeEventState is a helper map of string to AttributeEventState attribute value.
+var MapAttributeEventState = map[string]AttributeEventState{
+	"errors":                  AttributeEventStateErrors,
+	"warnings":                AttributeEventStateWarnings,
+	"rows_affected":           AttributeEventStateRowsAffected,
+	"rows_sent":               AttributeEventStateRowsSent,
+	"rows_examined":           AttributeEventStateRowsExamined,
+	"created_tmp_disk_tables": AttributeEventStateCreatedTmpDiskTables,
+	"created_tmp_tables":      AttributeEventStateCreatedTmpTables,
+	"sort_merge_passes":       AttributeEventStateSortMergePasses,
+	"sort_rows":               AttributeEventStateSortRows,
+	"no_index_used":           AttributeEventStateNoIndexUsed,
 }
 
 // AttributeHandler specifies the a value handler attribute.
@@ -1687,7 +1687,7 @@ func (m *metricMysqlStatementEventCount) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricMysqlStatementEventCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, schemaAttributeValue string, digestAttributeValue string, digestTextAttributeValue string, eventStatesAttributeValue string) {
+func (m *metricMysqlStatementEventCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, schemaAttributeValue string, digestAttributeValue string, digestTextAttributeValue string, eventStateAttributeValue string) {
 	if !m.settings.Enabled {
 		return
 	}
@@ -1698,7 +1698,7 @@ func (m *metricMysqlStatementEventCount) recordDataPoint(start pcommon.Timestamp
 	dp.Attributes().PutString("schema", schemaAttributeValue)
 	dp.Attributes().PutString("digest", digestAttributeValue)
 	dp.Attributes().PutString("digest_text", digestTextAttributeValue)
-	dp.Attributes().PutString("kind", eventStatesAttributeValue)
+	dp.Attributes().PutString("kind", eventStateAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -2277,8 +2277,8 @@ func (mb *MetricsBuilder) RecordMysqlSortsDataPoint(ts pcommon.Timestamp, inputV
 }
 
 // RecordMysqlStatementEventCountDataPoint adds a data point to mysql.statement_event.count metric.
-func (mb *MetricsBuilder) RecordMysqlStatementEventCountDataPoint(ts pcommon.Timestamp, val int64, schemaAttributeValue string, digestAttributeValue string, digestTextAttributeValue string, eventStatesAttributeValue AttributeEventStates) {
-	mb.metricMysqlStatementEventCount.recordDataPoint(mb.startTime, ts, val, schemaAttributeValue, digestAttributeValue, digestTextAttributeValue, eventStatesAttributeValue.String())
+func (mb *MetricsBuilder) RecordMysqlStatementEventCountDataPoint(ts pcommon.Timestamp, val int64, schemaAttributeValue string, digestAttributeValue string, digestTextAttributeValue string, eventStateAttributeValue AttributeEventState) {
+	mb.metricMysqlStatementEventCount.recordDataPoint(mb.startTime, ts, val, schemaAttributeValue, digestAttributeValue, digestTextAttributeValue, eventStateAttributeValue.String())
 }
 
 // RecordMysqlStatementEventWaitTimeDataPoint adds a data point to mysql.statement_event.wait.time metric.

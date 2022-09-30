@@ -81,7 +81,7 @@ attributes:
   digest_text:
     value: digest_text
     description: Text before digestion.
-  event_states:
+  event_state:
     value: kind
     description: Possible event states.
     enum: [errors, warnings, rows_affected, rows_sent, rows_examined, created_tmp_disk_tables, created_tmp_tables, sort_merge_passes, sort_rows, no_index_used]
@@ -290,16 +290,16 @@ metrics:
       aggregation: cumulative
     attributes: [threads]
   mysql.statement_event.count:
-    enabled: true
+    enabled: false
     description: Summary of current and recent statement events.
     unit: 1
     sum:
       value_type: int
       monotonic: false
       aggregation: cumulative
-    attributes: [schema, digest, digest_text, event_states]
+    attributes: [schema, digest, digest_text, event_state]
   mysql.statement_event.wait.time:
-    enabled: true
+    enabled: false
     description: The total wait time of the summarized timed events.
     unit: ns
     sum:
