@@ -44,12 +44,12 @@ func TestScrape(t *testing.T) {
 
 		scraper := newMySQLScraper(componenttest.NewNopReceiverCreateSettings(), cfg)
 		scraper.sqlclient = &mockClient{
-			globalStatsFile:        "global_stats",
-			innodbStatsFile:        "innodb_stats",
-			tableIoWaitsFile:       "table_io_waits_stats",
-			indexIoWaitsFile:       "index_io_waits_stats",
-			statementEventsFile:    "statement_events",
-			perfTableLockWaitsFile: "perf_table_lock_waits",
+			globalStatsFile:             "global_stats",
+			innodbStatsFile:             "innodb_stats",
+			tableIoWaitsFile:            "table_io_waits_stats",
+			indexIoWaitsFile:            "index_io_waits_stats",
+			statementEventsFile:         "statement_events",
+			tableLockWaitEventStatsFile: "perf_table_lock_waits",
 		}
 
 		actualMetrics, err := scraper.scrape(context.Background())
@@ -70,12 +70,12 @@ func TestScrape(t *testing.T) {
 
 		scraper := newMySQLScraper(componenttest.NewNopReceiverCreateSettings(), cfg)
 		scraper.sqlclient = &mockClient{
-			globalStatsFile:        "global_stats_partial",
-			innodbStatsFile:        "innodb_stats_empty",
-			tableIoWaitsFile:       "table_io_waits_stats_empty",
-			indexIoWaitsFile:       "index_io_waits_stats_empty",
-			statementEventsFile:    "statement_events_empty",
-			perfTableLockWaitsFile: "perf_table_lock_waits_empty",
+			globalStatsFile:             "global_stats_partial",
+			innodbStatsFile:             "innodb_stats_empty",
+			tableIoWaitsFile:            "table_io_waits_stats_empty",
+			indexIoWaitsFile:            "index_io_waits_stats_empty",
+			statementEventsFile:         "statement_events_empty",
+			tableLockWaitEventStatsFile: "perf_table_lock_waits_empty",
 		}
 
 		actualMetrics, scrapeErr := scraper.scrape(context.Background())
@@ -98,12 +98,12 @@ func TestScrape(t *testing.T) {
 var _ client = (*mockClient)(nil)
 
 type mockClient struct {
-	globalStatsFile        string
-	innodbStatsFile        string
-	tableIoWaitsFile       string
-	indexIoWaitsFile       string
-	statementEventsFile    string
-	perfTableLockWaitsFile string
+	globalStatsFile             string
+	innodbStatsFile             string
+	tableIoWaitsFile            string
+	indexIoWaitsFile            string
+	statementEventsFile         string
+	tableLockWaitEventStatsFile string
 }
 
 func readFile(fname string) (map[string]string, error) {
@@ -226,9 +226,9 @@ func (c *mockClient) getStatementEventsStats() ([]StatementEventStats, error) {
 	return stats, nil
 }
 
-func (c *mockClient) getPerfTableLockWaits() ([]perfTableLockWaits, error) {
-	var stats []perfTableLockWaits
-	file, err := os.Open(filepath.Join("testdata", "scraper", c.perfTableLockWaitsFile+".txt"))
+func (c *mockClient) gettableLockWaitEventStatss() ([]tableLockWaitEventStats, error) {
+	var stats []tableLockWaitEventStats
+	file, err := os.Open(filepath.Join("testdata", "scraper", c.tableLockWaitEventStatsFile+".txt"))
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +236,7 @@ func (c *mockClient) getPerfTableLockWaits() ([]perfTableLockWaits, error) {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		var s perfTableLockWaits
+		var s tableLockWaitEventStats
 		text := strings.Split(scanner.Text(), "\t")
 
 		s.schema = text[0]

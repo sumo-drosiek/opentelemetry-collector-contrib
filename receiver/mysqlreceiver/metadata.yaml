@@ -85,12 +85,12 @@ attributes:
     value: kind
     description: Possible event states.
     enum: [errors, warnings, rows_affected, rows_sent, rows_examined, created_tmp_disk_tables, created_tmp_tables, sort_merge_passes, sort_rows, no_index_used]
-  read_lock_types:
-    value: read_type
+  read_lock_type:
+    value: kind
     description: Read operation types.
     enum: [normal, with_shared_locks, high_priority, no_insert, external]
-  write_lock_types:
-    value: write_type
+  write_lock_type:
+    value: kind
     description: Write operation types.
     enum: [allow_write, concurrent_insert, low_priority, normal, external]
 
@@ -315,7 +315,7 @@ metrics:
       monotonic: false
       aggregation: cumulative
     attributes: [schema, digest, digest_text]
-  mysql.perf.table.lock.wait.read:
+  mysql.table_lock_wait.read.count:
     enabled: true
     description: The total table lock wait read events.
     unit: "1"
@@ -323,8 +323,8 @@ metrics:
       value_type: int
       monotonic: false
       aggregation: cumulative
-    attributes: [schema, table_name, read_lock_types]
-  mysql.perf.table.lock.wait.read.time:
+    attributes: [schema, table_name, read_lock_type]
+  mysql.table_lock_wait.read.time:
     enabled: true
     description: The total table lock wait read events times.
     unit: ps
@@ -332,8 +332,8 @@ metrics:
       value_type: int
       monotonic: false
       aggregation: cumulative
-    attributes: [schema, table_name, read_lock_types]
-  mysql.perf.table.lock.wait.write:
+    attributes: [schema, table_name, read_lock_type]
+  mysql.table_lock_wait.write.count:
     enabled: true
     description: The total table lock wait write events.
     unit: "1"
@@ -341,8 +341,8 @@ metrics:
       value_type: int
       monotonic: false
       aggregation: cumulative
-    attributes: [schema, table_name, write_lock_types]
-  mysql.perf.table.lock.wait.write.time:
+    attributes: [schema, table_name, write_lock_type]
+  mysql.table_lock_wait.write.time:
     enabled: true
     description: The total table lock wait write events times.
     unit: ps
@@ -350,4 +350,4 @@ metrics:
       value_type: int
       monotonic: false
       aggregation: cumulative
-    attributes: [schema, table_name, write_lock_types]
+    attributes: [schema, table_name, write_lock_type]

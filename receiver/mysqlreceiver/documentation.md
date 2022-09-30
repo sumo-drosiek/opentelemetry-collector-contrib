@@ -23,10 +23,6 @@ These are the metrics available for this scraper.
 | **mysql.log_operations** | The number of InnoDB log operations. | 1 | Sum(Int) | <ul> <li>log_operations</li> </ul> |
 | **mysql.operations** | The number of InnoDB operations. | 1 | Sum(Int) | <ul> <li>operations</li> </ul> |
 | **mysql.page_operations** | The number of InnoDB page operations. | 1 | Sum(Int) | <ul> <li>page_operations</li> </ul> |
-| **mysql.perf.table.lock.wait.read** | The total table lock wait read events. | 1 | Sum(Int) | <ul> <li>schema</li> <li>table_name</li> <li>read_lock_types</li> </ul> |
-| **mysql.perf.table.lock.wait.read.time** | The total table lock wait read events times. | ps | Sum(Int) | <ul> <li>schema</li> <li>table_name</li> <li>read_lock_types</li> </ul> |
-| **mysql.perf.table.lock.wait.write** | The total table lock wait write events. | 1 | Sum(Int) | <ul> <li>schema</li> <li>table_name</li> <li>write_lock_types</li> </ul> |
-| **mysql.perf.table.lock.wait.write.time** | The total table lock wait write events times. | ps | Sum(Int) | <ul> <li>schema</li> <li>table_name</li> <li>write_lock_types</li> </ul> |
 | **mysql.row_locks** | The number of InnoDB row locks. | 1 | Sum(Int) | <ul> <li>row_locks</li> </ul> |
 | **mysql.row_operations** | The number of InnoDB row operations. | 1 | Sum(Int) | <ul> <li>row_operations</li> </ul> |
 | **mysql.sorts** | The number of MySQL sorts. | 1 | Sum(Int) | <ul> <li>sorts</li> </ul> |
@@ -34,6 +30,10 @@ These are the metrics available for this scraper.
 | mysql.statement_event.wait.time | The total wait time of the summarized timed events. | ns | Sum(Int) | <ul> <li>schema</li> <li>digest</li> <li>digest_text</li> </ul> |
 | **mysql.table.io.wait.count** | The total count of I/O wait events for a table. | 1 | Sum(Int) | <ul> <li>io_waits_operations</li> <li>table_name</li> <li>schema</li> </ul> |
 | **mysql.table.io.wait.time** | The total time of I/O wait events for a table. | ns | Sum(Int) | <ul> <li>io_waits_operations</li> <li>table_name</li> <li>schema</li> </ul> |
+| **mysql.table_lock_wait.read.count** | The total table lock wait read events. | 1 | Sum(Int) | <ul> <li>schema</li> <li>table_name</li> <li>read_lock_type</li> </ul> |
+| **mysql.table_lock_wait.read.time** | The total table lock wait read events times. | ps | Sum(Int) | <ul> <li>schema</li> <li>table_name</li> <li>read_lock_type</li> </ul> |
+| **mysql.table_lock_wait.write.count** | The total table lock wait write events. | 1 | Sum(Int) | <ul> <li>schema</li> <li>table_name</li> <li>write_lock_type</li> </ul> |
+| **mysql.table_lock_wait.write.time** | The total table lock wait write events times. | ps | Sum(Int) | <ul> <li>schema</li> <li>table_name</li> <li>write_lock_type</li> </ul> |
 | **mysql.threads** | The state of MySQL threads. | 1 | Sum(Int) | <ul> <li>threads</li> </ul> |
 
 **Highlighted metrics** are emitted by default. Other metrics are optional and not emitted by default.
@@ -70,11 +70,11 @@ metrics:
 | log_operations (operation) | The log operation types. | waits, write_requests, writes |
 | operations (operation) | The operation types. | fsyncs, reads, writes |
 | page_operations (operation) | The page operation types. | created, read, written |
-| read_lock_types (read_type) | Read operation types. | normal, with_shared_locks, high_priority, no_insert, external |
+| read_lock_type (kind) | Read operation types. | normal, with_shared_locks, high_priority, no_insert, external |
 | row_locks (kind) | The row lock type. | waits, time |
 | row_operations (operation) | The row operation type. | deleted, inserted, read, updated |
 | schema (schema) | The schema of the object. |  |
 | sorts (kind) | The sort count type. | merge_passes, range, rows, scan |
 | table_name (table) | Table name for event or process. |  |
 | threads (kind) | The thread count type. | cached, connected, created, running |
-| write_lock_types (write_type) | Write operation types. | allow_write, concurrent_insert, low_priority, normal, external |
+| write_lock_type (kind) | Write operation types. | allow_write, concurrent_insert, low_priority, normal, external |

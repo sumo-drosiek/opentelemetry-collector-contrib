@@ -102,7 +102,7 @@ func (m *mySQLScraper) scrape(context.Context) (pmetric.Metrics, error) {
 	m.scrapeStatementEventsStats(now, errs)
 
 	// collect lock table events metrics
-	m.scrapePerfTableLockWaits(now, errs)
+	m.scrapetableLockWaitEventStats(now, errs)
 
 	// collect global status metrics.
 	m.scrapeGlobalStats(now, errs)
@@ -384,43 +384,43 @@ func (m *mySQLScraper) scrapeStatementEventsStats(now pcommon.Timestamp, errs *s
 	}
 }
 
-func (m *mySQLScraper) scrapePerfTableLockWaits(now pcommon.Timestamp, errs *scrapererror.ScrapeErrors) {
-	perfTableLockWaits, err := m.sqlclient.getPerfTableLockWaits()
+func (m *mySQLScraper) scrapetableLockWaitEventStats(now pcommon.Timestamp, errs *scrapererror.ScrapeErrors) {
+	tableLockWaitEventStats, err := m.sqlclient.gettableLockWaitEventStatss()
 	if err != nil {
 		m.logger.Error("Failed to fetch index io_waits stats", zap.Error(err))
 		errs.AddPartial(8, err)
 		return
 	}
 
-	for i := 0; i < len(perfTableLockWaits); i++ {
-		s := perfTableLockWaits[i]
+	for i := 0; i < len(tableLockWaitEventStats); i++ {
+		s := tableLockWaitEventStats[i]
 		// read data points
-		m.mb.RecordMysqlPerfTableLockWaitReadDataPoint(now, s.countReadNormal, s.schema, s.name, metadata.AttributeReadLockTypesNormal)
-		m.mb.RecordMysqlPerfTableLockWaitReadDataPoint(now, s.countReadWithSharedLocks, s.schema, s.name, metadata.AttributeReadLockTypesWithSharedLocks)
-		m.mb.RecordMysqlPerfTableLockWaitReadDataPoint(now, s.countReadHighPriority, s.schema, s.name, metadata.AttributeReadLockTypesHighPriority)
-		m.mb.RecordMysqlPerfTableLockWaitReadDataPoint(now, s.countReadNoInsert, s.schema, s.name, metadata.AttributeReadLockTypesNoInsert)
-		m.mb.RecordMysqlPerfTableLockWaitReadDataPoint(now, s.countReadExternal, s.schema, s.name, metadata.AttributeReadLockTypesExternal)
+		m.mb.RecordMysqlTableLockWaitReadCountDataPoint(now, s.countReadNormal, s.schema, s.name, metadata.AttributeReadLockTypeNormal)
+		m.mb.RecordMysqlTableLockWaitReadCountDataPoint(now, s.countReadWithSharedLocks, s.schema, s.name, metadata.AttributeReadLockTypeWithSharedLocks)
+		m.mb.RecordMysqlTableLockWaitReadCountDataPoint(now, s.countReadHighPriority, s.schema, s.name, metadata.AttributeReadLockTypeHighPriority)
+		m.mb.RecordMysqlTableLockWaitReadCountDataPoint(now, s.countReadNoInsert, s.schema, s.name, metadata.AttributeReadLockTypeNoInsert)
+		m.mb.RecordMysqlTableLockWaitReadCountDataPoint(now, s.countReadExternal, s.schema, s.name, metadata.AttributeReadLockTypeExternal)
 
 		// read time data points
-		m.mb.RecordMysqlPerfTableLockWaitReadTimeDataPoint(now, s.sumTimerReadNormal, s.schema, s.name, metadata.AttributeReadLockTypesNormal)
-		m.mb.RecordMysqlPerfTableLockWaitReadTimeDataPoint(now, s.sumTimerReadWithSharedLocks, s.schema, s.name, metadata.AttributeReadLockTypesWithSharedLocks)
-		m.mb.RecordMysqlPerfTableLockWaitReadTimeDataPoint(now, s.sumTimerReadHighPriority, s.schema, s.name, metadata.AttributeReadLockTypesHighPriority)
-		m.mb.RecordMysqlPerfTableLockWaitReadTimeDataPoint(now, s.sumTimerReadNoInsert, s.schema, s.name, metadata.AttributeReadLockTypesNoInsert)
-		m.mb.RecordMysqlPerfTableLockWaitReadTimeDataPoint(now, s.sumTimerReadExternal, s.schema, s.name, metadata.AttributeReadLockTypesExternal)
+		m.mb.RecordMysqlTableLockWaitReadTimeDataPoint(now, s.sumTimerReadNormal, s.schema, s.name, metadata.AttributeReadLockTypeNormal)
+		m.mb.RecordMysqlTableLockWaitReadTimeDataPoint(now, s.sumTimerReadWithSharedLocks, s.schema, s.name, metadata.AttributeReadLockTypeWithSharedLocks)
+		m.mb.RecordMysqlTableLockWaitReadTimeDataPoint(now, s.sumTimerReadHighPriority, s.schema, s.name, metadata.AttributeReadLockTypeHighPriority)
+		m.mb.RecordMysqlTableLockWaitReadTimeDataPoint(now, s.sumTimerReadNoInsert, s.schema, s.name, metadata.AttributeReadLockTypeNoInsert)
+		m.mb.RecordMysqlTableLockWaitReadTimeDataPoint(now, s.sumTimerReadExternal, s.schema, s.name, metadata.AttributeReadLockTypeExternal)
 
 		// write data points
-		m.mb.RecordMysqlPerfTableLockWaitWriteDataPoint(now, s.countWriteAllowWrite, s.schema, s.name, metadata.AttributeWriteLockTypesAllowWrite)
-		m.mb.RecordMysqlPerfTableLockWaitWriteDataPoint(now, s.countWriteConcurrentInsert, s.schema, s.name, metadata.AttributeWriteLockTypesConcurrentInsert)
-		m.mb.RecordMysqlPerfTableLockWaitWriteDataPoint(now, s.countWriteLowPriority, s.schema, s.name, metadata.AttributeWriteLockTypesLowPriority)
-		m.mb.RecordMysqlPerfTableLockWaitWriteDataPoint(now, s.countWriteNormal, s.schema, s.name, metadata.AttributeWriteLockTypesNormal)
-		m.mb.RecordMysqlPerfTableLockWaitWriteDataPoint(now, s.countWriteExternal, s.schema, s.name, metadata.AttributeWriteLockTypesExternal)
+		m.mb.RecordMysqlTableLockWaitWriteCountDataPoint(now, s.countWriteAllowWrite, s.schema, s.name, metadata.AttributeWriteLockTypeAllowWrite)
+		m.mb.RecordMysqlTableLockWaitWriteCountDataPoint(now, s.countWriteConcurrentInsert, s.schema, s.name, metadata.AttributeWriteLockTypeConcurrentInsert)
+		m.mb.RecordMysqlTableLockWaitWriteCountDataPoint(now, s.countWriteLowPriority, s.schema, s.name, metadata.AttributeWriteLockTypeLowPriority)
+		m.mb.RecordMysqlTableLockWaitWriteCountDataPoint(now, s.countWriteNormal, s.schema, s.name, metadata.AttributeWriteLockTypeNormal)
+		m.mb.RecordMysqlTableLockWaitWriteCountDataPoint(now, s.countWriteExternal, s.schema, s.name, metadata.AttributeWriteLockTypeExternal)
 
 		// write time data points
-		m.mb.RecordMysqlPerfTableLockWaitWriteTimeDataPoint(now, s.sumTimerWriteAllowWrite, s.schema, s.name, metadata.AttributeWriteLockTypesAllowWrite)
-		m.mb.RecordMysqlPerfTableLockWaitWriteTimeDataPoint(now, s.sumTimerWriteConcurrentInsert, s.schema, s.name, metadata.AttributeWriteLockTypesConcurrentInsert)
-		m.mb.RecordMysqlPerfTableLockWaitWriteTimeDataPoint(now, s.sumTimerWriteLowPriority, s.schema, s.name, metadata.AttributeWriteLockTypesLowPriority)
-		m.mb.RecordMysqlPerfTableLockWaitWriteTimeDataPoint(now, s.sumTimerWriteNormal, s.schema, s.name, metadata.AttributeWriteLockTypesNormal)
-		m.mb.RecordMysqlPerfTableLockWaitWriteTimeDataPoint(now, s.sumTimerWriteExternal, s.schema, s.name, metadata.AttributeWriteLockTypesExternal)
+		m.mb.RecordMysqlTableLockWaitWriteTimeDataPoint(now, s.sumTimerWriteAllowWrite, s.schema, s.name, metadata.AttributeWriteLockTypeAllowWrite)
+		m.mb.RecordMysqlTableLockWaitWriteTimeDataPoint(now, s.sumTimerWriteConcurrentInsert, s.schema, s.name, metadata.AttributeWriteLockTypeConcurrentInsert)
+		m.mb.RecordMysqlTableLockWaitWriteTimeDataPoint(now, s.sumTimerWriteLowPriority, s.schema, s.name, metadata.AttributeWriteLockTypeLowPriority)
+		m.mb.RecordMysqlTableLockWaitWriteTimeDataPoint(now, s.sumTimerWriteNormal, s.schema, s.name, metadata.AttributeWriteLockTypeNormal)
+		m.mb.RecordMysqlTableLockWaitWriteTimeDataPoint(now, s.sumTimerWriteExternal, s.schema, s.name, metadata.AttributeWriteLockTypeExternal)
 	}
 }
 

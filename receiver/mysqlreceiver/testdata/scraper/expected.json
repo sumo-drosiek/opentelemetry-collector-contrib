@@ -1894,7 +1894,7 @@
                   },
                   {
                      "description": "The total table lock wait read events.",
-                     "name": "mysql.perf.table.lock.wait.read",
+                     "name": "mysql.table_lock_wait.read.count",
                      "sum": {
                         "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
                         "dataPoints": [
@@ -1914,7 +1914,7 @@
                                     }
                                  },
                                  {
-                                    "key": "read_type",
+                                    "key": "kind",
                                     "value": {
                                        "stringValue": "normal"
                                     }
@@ -1939,7 +1939,7 @@
                                     }
                                  },
                                  {
-                                    "key": "read_type",
+                                    "key": "kind",
                                     "value": {
                                        "stringValue": "with_shared_locks"
                                     }
@@ -1964,7 +1964,7 @@
                                     }
                                  },
                                  {
-                                    "key": "read_type",
+                                    "key": "kind",
                                     "value": {
                                        "stringValue": "high_priority"
                                     }
@@ -1989,7 +1989,7 @@
                                     }
                                  },
                                  {
-                                    "key": "read_type",
+                                    "key": "kind",
                                     "value": {
                                        "stringValue": "no_insert"
                                     }
@@ -2014,7 +2014,7 @@
                                     }
                                  },
                                  {
-                                    "key": "read_type",
+                                    "key": "kind",
                                     "value": {
                                        "stringValue": "external"
                                     }
@@ -2029,7 +2029,7 @@
                   },
                   {
                      "description": "The total table lock wait read events times.",
-                     "name": "mysql.perf.table.lock.wait.read.time",
+                     "name": "mysql.table_lock_wait.read.time",
                      "sum": {
                         "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
                         "dataPoints": [
@@ -2049,7 +2049,7 @@
                                     }
                                  },
                                  {
-                                    "key": "read_type",
+                                    "key": "kind",
                                     "value": {
                                        "stringValue": "normal"
                                     }
@@ -2074,7 +2074,7 @@
                                     }
                                  },
                                  {
-                                    "key": "read_type",
+                                    "key": "kind",
                                     "value": {
                                        "stringValue": "with_shared_locks"
                                     }
@@ -2099,7 +2099,7 @@
                                     }
                                  },
                                  {
-                                    "key": "read_type",
+                                    "key": "kind",
                                     "value": {
                                        "stringValue": "high_priority"
                                     }
@@ -2124,7 +2124,7 @@
                                     }
                                  },
                                  {
-                                    "key": "read_type",
+                                    "key": "kind",
                                     "value": {
                                        "stringValue": "no_insert"
                                     }
@@ -2149,7 +2149,7 @@
                                     }
                                  },
                                  {
-                                    "key": "read_type",
+                                    "key": "kind",
                                     "value": {
                                        "stringValue": "external"
                                     }
@@ -2164,7 +2164,7 @@
                   },
                   {
                      "description": "The total table lock wait write events.",
-                     "name": "mysql.perf.table.lock.wait.write",
+                     "name": "mysql.table_lock_wait.write.count",
                      "sum": {
                         "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
                         "dataPoints": [
@@ -2184,7 +2184,7 @@
                                     }
                                  },
                                  {
-                                    "key": "write_type",
+                                    "key": "kind",
                                     "value": {
                                        "stringValue": "allow_write"
                                     }
@@ -2209,7 +2209,7 @@
                                     }
                                  },
                                  {
-                                    "key": "write_type",
+                                    "key": "kind",
                                     "value": {
                                        "stringValue": "concurrent_insert"
                                     }
@@ -2234,7 +2234,7 @@
                                     }
                                  },
                                  {
-                                    "key": "write_type",
+                                    "key": "kind",
                                     "value": {
                                        "stringValue": "low_priority"
                                     }
@@ -2259,7 +2259,7 @@
                                     }
                                  },
                                  {
-                                    "key": "write_type",
+                                    "key": "kind",
                                     "value": {
                                        "stringValue": "normal"
                                     }
@@ -2284,7 +2284,7 @@
                                     }
                                  },
                                  {
-                                    "key": "write_type",
+                                    "key": "kind",
                                     "value": {
                                        "stringValue": "external"
                                     }
@@ -2299,7 +2299,7 @@
                   },
                   {
                      "description": "The total table lock wait write events times.",
-                     "name": "mysql.perf.table.lock.wait.write.time",
+                     "name": "mysql.table_lock_wait.write.time",
                      "sum": {
                         "aggregationTemporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
                         "dataPoints": [
@@ -2319,7 +2319,7 @@
                                     }
                                  },
                                  {
-                                    "key": "write_type",
+                                    "key": "kind",
                                     "value": {
                                        "stringValue": "allow_write"
                                     }
@@ -2344,7 +2344,7 @@
                                     }
                                  },
                                  {
-                                    "key": "write_type",
+                                    "key": "kind",
                                     "value": {
                                        "stringValue": "concurrent_insert"
                                     }
@@ -2369,7 +2369,7 @@
                                     }
                                  },
                                  {
-                                    "key": "write_type",
+                                    "key": "kind",
                                     "value": {
                                        "stringValue": "low_priority"
                                     }
@@ -2394,7 +2394,7 @@
                                     }
                                  },
                                  {
-                                    "key": "write_type",
+                                    "key": "kind",
                                     "value": {
                                        "stringValue": "normal"
                                     }
@@ -2419,7 +2419,7 @@
                                     }
                                  },
                                  {
-                                    "key": "write_type",
+                                    "key": "kind",
                                     "value": {
                                        "stringValue": "external"
                                     }

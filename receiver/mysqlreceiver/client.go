@@ -30,7 +30,7 @@ type client interface {
 	getTableIoWaitsStats() ([]TableIoWaitsStats, error)
 	getIndexIoWaitsStats() ([]IndexIoWaitsStats, error)
 	getStatementEventsStats() ([]StatementEventStats, error)
-	getPerfTableLockWaits() ([]perfTableLockWaits, error)
+	gettableLockWaitEventStatss() ([]tableLockWaitEventStats, error)
 	Close() error
 }
 
@@ -81,7 +81,7 @@ type StatementEventStats struct {
 	countNoIndexUsed          int64
 }
 
-type perfTableLockWaits struct {
+type tableLockWaitEventStats struct {
 	schema                        string
 	name                          string
 	countReadNormal               int64
@@ -240,7 +240,7 @@ func (c *mySQLClient) getStatementEventsStats() ([]StatementEventStats, error) {
 	return stats, nil
 }
 
-func (c *mySQLClient) getPerfTableLockWaits() ([]perfTableLockWaits, error) {
+func (c *mySQLClient) gettableLockWaitEventStatss() ([]tableLockWaitEventStats, error) {
 	query := "SELECT OBJECT_SCHEMA, OBJECT_NAME, COUNT_READ_NORMAL, COUNT_READ_WITH_SHARED_LOCKS," +
 		"COUNT_READ_HIGH_PRIORITY, COUNT_READ_NO_INSERT, COUNT_READ_EXTERNAL, COUNT_WRITE_ALLOW_WRITE," +
 		"COUNT_WRITE_CONCURRENT_INSERT, COUNT_WRITE_LOW_PRIORITY, COUNT_WRITE_NORMAL," +
@@ -257,9 +257,9 @@ func (c *mySQLClient) getPerfTableLockWaits() ([]perfTableLockWaits, error) {
 	}
 	defer rows.Close()
 
-	var stats []perfTableLockWaits
+	var stats []tableLockWaitEventStats
 	for rows.Next() {
-		var s perfTableLockWaits
+		var s tableLockWaitEventStats
 		err := rows.Scan(&s.schema, &s.name,
 			&s.countReadNormal, &s.countReadWithSharedLocks, &s.countReadHighPriority, &s.countReadNoInsert, &s.countReadExternal,
 			&s.countWriteAllowWrite, &s.countWriteConcurrentInsert, &s.countWriteLowPriority, &s.countWriteNormal, &s.countWriteExternal,
