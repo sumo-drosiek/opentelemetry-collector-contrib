@@ -2160,7 +2160,7 @@
                            }
                         ]
                      },
-                     "unit": "ps"
+                     "unit": "ns"
                   },
                   {
                      "description": "The total table lock wait write events.",
@@ -2430,7 +2430,7 @@
                            }
                         ]
                      },
-                     "unit": "ps"
+                     "unit": "ns"
                   }
                ]
             }

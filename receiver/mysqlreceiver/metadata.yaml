@@ -327,7 +327,7 @@ metrics:
   mysql.table_lock_wait.read.time:
     enabled: true
     description: The total table lock wait read events times.
-    unit: ps
+    unit: ns
     sum:
       value_type: int
       monotonic: false
@@ -345,7 +345,7 @@ metrics:
   mysql.table_lock_wait.write.time:
     enabled: true
     description: The total table lock wait write events times.
-    unit: ps
+    unit: ns
     sum:
       value_type: int
       monotonic: false

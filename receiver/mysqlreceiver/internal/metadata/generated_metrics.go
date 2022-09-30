@@ -2048,7 +2048,7 @@ type metricMysqlTableLockWaitReadTime struct {
 func (m *metricMysqlTableLockWaitReadTime) init() {
 	m.data.SetName("mysql.table_lock_wait.read.time")
 	m.data.SetDescription("The total table lock wait read events times.")
-	m.data.SetUnit("ps")
+	m.data.SetUnit("ns")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(false)
 	m.data.Sum().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
@@ -2158,7 +2158,7 @@ type metricMysqlTableLockWaitWriteTime struct {
 func (m *metricMysqlTableLockWaitWriteTime) init() {
 	m.data.SetName("mysql.table_lock_wait.write.time")
 	m.data.SetDescription("The total table lock wait write events times.")
-	m.data.SetUnit("ps")
+	m.data.SetUnit("ns")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(false)
 	m.data.Sum().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)

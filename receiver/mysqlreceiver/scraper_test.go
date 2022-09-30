@@ -49,7 +49,7 @@ func TestScrape(t *testing.T) {
 			tableIoWaitsFile:            "table_io_waits_stats",
 			indexIoWaitsFile:            "index_io_waits_stats",
 			statementEventsFile:         "statement_events",
-			tableLockWaitEventStatsFile: "perf_table_lock_waits",
+			tableLockWaitEventStatsFile: "table_lock_wait_event_stats",
 		}
 
 		actualMetrics, err := scraper.scrape(context.Background())
@@ -75,7 +75,7 @@ func TestScrape(t *testing.T) {
 			tableIoWaitsFile:            "table_io_waits_stats_empty",
 			indexIoWaitsFile:            "index_io_waits_stats_empty",
 			statementEventsFile:         "statement_events_empty",
-			tableLockWaitEventStatsFile: "perf_table_lock_waits_empty",
+			tableLockWaitEventStatsFile: "table_lock_wait_event_stats_empty",
 		}
 
 		actualMetrics, scrapeErr := scraper.scrape(context.Background())

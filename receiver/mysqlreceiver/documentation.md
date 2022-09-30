@@ -31,9 +31,9 @@ These are the metrics available for this scraper.
 | **mysql.table.io.wait.count** | The total count of I/O wait events for a table. | 1 | Sum(Int) | <ul> <li>io_waits_operations</li> <li>table_name</li> <li>schema</li> </ul> |
 | **mysql.table.io.wait.time** | The total time of I/O wait events for a table. | ns | Sum(Int) | <ul> <li>io_waits_operations</li> <li>table_name</li> <li>schema</li> </ul> |
 | **mysql.table_lock_wait.read.count** | The total table lock wait read events. | 1 | Sum(Int) | <ul> <li>schema</li> <li>table_name</li> <li>read_lock_type</li> </ul> |
-| **mysql.table_lock_wait.read.time** | The total table lock wait read events times. | ps | Sum(Int) | <ul> <li>schema</li> <li>table_name</li> <li>read_lock_type</li> </ul> |
+| **mysql.table_lock_wait.read.time** | The total table lock wait read events times. | ns | Sum(Int) | <ul> <li>schema</li> <li>table_name</li> <li>read_lock_type</li> </ul> |
 | **mysql.table_lock_wait.write.count** | The total table lock wait write events. | 1 | Sum(Int) | <ul> <li>schema</li> <li>table_name</li> <li>write_lock_type</li> </ul> |
-| **mysql.table_lock_wait.write.time** | The total table lock wait write events times. | ps | Sum(Int) | <ul> <li>schema</li> <li>table_name</li> <li>write_lock_type</li> </ul> |
+| **mysql.table_lock_wait.write.time** | The total table lock wait write events times. | ns | Sum(Int) | <ul> <li>schema</li> <li>table_name</li> <li>write_lock_type</li> </ul> |
 | **mysql.threads** | The state of MySQL threads. | 1 | Sum(Int) | <ul> <li>threads</li> </ul> |
 
 **Highlighted metrics** are emitted by default. Other metrics are optional and not emitted by default.
