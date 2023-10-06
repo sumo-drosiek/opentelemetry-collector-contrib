@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	sl "github.com/influxdata/go-syslog/v3"
@@ -77,6 +78,8 @@ func (c Config) Build(logger *zap.SugaredLogger) (operator.Operator, error) {
 		return nil, err
 	}
 
+	proto := strings.ToLower(c.Protocol)
+
 	switch {
 	case c.Protocol == "":
 		return nil, fmt.Errorf("missing field 'protocol'")
@@ -88,6 +91,8 @@ func (c Config) Build(logger *zap.SugaredLogger) (operator.Operator, error) {
 		if *c.NonTransparentFramingTrailer != NULTrailer && *c.NonTransparentFramingTrailer != LFTrailer {
 			return nil, fmt.Errorf("invalid non_transparent_framing_trailer '%s'. Must be either 'LF' or 'NUL'", *c.NonTransparentFramingTrailer)
 		}
+	case proto != RFC5424 && proto != RFC3164:
+		return nil, fmt.Errorf("unsupported protocol version: %s", c.Protocol)
 	}
 
 	if c.Location == "" {
@@ -101,7 +106,7 @@ func (c Config) Build(logger *zap.SugaredLogger) (operator.Operator, error) {
 
 	return &Parser{
 		ParserOperator:               parserOperator,
-		protocol:                     c.Protocol,
+		protocol:                     proto,
 		location:                     location,
 		enableOctetCounting:          c.EnableOctetCounting,
 		nonTransparentFramingTrailer: c.NonTransparentFramingTrailer,
