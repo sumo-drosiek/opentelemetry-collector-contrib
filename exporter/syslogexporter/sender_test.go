@@ -152,3 +152,7 @@ func TestFormatRFC3164(t *testing.T) {
 	assert.Equal(t, expected, s.formatMsg(msg4, timeObj1))
 	assert.Nil(t, err)
 }
+
+func TestFormatMessagePart(t *testing.T) {
+	"formatMessagePart"
+}

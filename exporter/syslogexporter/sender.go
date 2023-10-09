@@ -209,7 +209,7 @@ func (s *sender) formatRFC5424(msg map[string]any, timestamp time.Time) string {
 }
 
 func formatMessagePart(message any) string {
-	msg := message.(string)
+	msg := fmt.Sprintf("%v", message)
 	if msg != emptyMessage {
 		msg = " " + msg
 	}
