@@ -189,14 +189,14 @@ func (s *sender) formatRFC3164(msg map[string]any, timestamp time.Time) string {
 	msgProperties := []string{priority, hostname, message, app}
 	populateDefaults(msg, msgProperties)
 	timestampString := timestamp.Format("Jan 02 15:04:05")
-	a := ""
+	appname := ""
 	if msg[app] != emptyValue {
-		a = msg[app].(string) + ":"
+		appname = msg[app].(string) + ":"
 	}
-	if a != "" && message != emptyMessage {
-		a += " "
+	if appname != "" && message != emptyMessage {
+		appname += " "
 	}
-	return fmt.Sprintf("<%d>%s %s %s%s", msg[priority], timestampString, msg[hostname], a, msg[message])
+	return fmt.Sprintf("<%d>%s %s %s%s", msg[priority], timestampString, msg[hostname], appname, msg[message])
 }
 
 func (s *sender) formatRFC5424(msg map[string]any, timestamp time.Time) string {
